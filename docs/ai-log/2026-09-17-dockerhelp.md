@@ -1,8 +1,8 @@
 ## Asked
-[what you asked the AI to do]
+Asked Claude to help set up a Dockerfile for a Java project with no build tool, and to create a simple Main.java to test it.
 
 ## Produced
-[short summary of what it gave you]
+Gave me a Dockerfile using eclipse-temurin:21-jdk that compiles and runs a Java file, plus a basic Main.java that prints "Hello from Docker!"
 
 ## Changed or rejected
-[what you kept, what you edited, what you threw out — with a reason for each]≈
+Kept the Dockerfile and Main.java as-is for this initial test setup — will update Main.java once I know what my actual program needs to do.
