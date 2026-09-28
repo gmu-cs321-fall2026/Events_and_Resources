@@ -9,3 +9,13 @@ export function getEvents() {
 
     return [];
 }
+
+export function createEvent(event) {
+    const events = getEvents();
+
+    events.push(event);
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+
+    return event;
+}
