@@ -2,16 +2,10 @@
 export default function EventCard({ event }) {
   return (
     <li>
-      <strong>{event.title}</strong> — {formatDate(event.dateTime)}
+      <strong>{event.eventTitle}</strong> — {event.date} {event.time}
       <br />
-      {event.location} · {event.category} · {event.format}
-      {event.capacity > 0 && ` · ${event.registeredCount}/${event.capacity} registered`}
+      {event.location} · {event.tag}
     </li>
   );
 }
 
-function formatDate(iso) {
-  return new Date(iso).toLocaleString(undefined, {
-    weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-  });
-}
