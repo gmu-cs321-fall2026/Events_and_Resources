@@ -1,9 +1,13 @@
-FROM eclipse-temurin:21-jdk
+FROM node:22
 
 WORKDIR /app
 
-COPY . .
+COPY frontend/package*.json ./
 
-RUN javac Main.java
+RUN npm install
 
-CMD ["java", "Main"]
+COPY frontend/ .
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
