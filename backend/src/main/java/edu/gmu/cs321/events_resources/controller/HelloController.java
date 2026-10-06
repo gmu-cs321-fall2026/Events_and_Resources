@@ -1,4 +1,4 @@
-package edu.gmu.cs321.events_resources;
+package edu.gmu.cs321.events_resources.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;

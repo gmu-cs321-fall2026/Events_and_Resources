@@ -128,3 +128,14 @@ Full request/response details are in the **Interface Contract v1** page on the W
 
 
 
+
+## Where code goes
+| You're writing… | Put it in |
+|---|---|
+| An endpoint | `backend/.../controller/` |
+| Business rules | `backend/.../service/` |
+| SQL / JdbcTemplate | `backend/.../repository/` |
+| Event, Registration, etc. | `backend/.../model/` |
+| Calls to Shared Core / Notifications | `backend/.../integration/` |
+| Error format, pagination | `backend/.../common/` |
+| React | `frontend/` |
