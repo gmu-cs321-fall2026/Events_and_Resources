@@ -11,7 +11,7 @@ export default function EventCard({ event, onSelect }) {
       <strong>{event.eventTitle}</strong> — {event.date} {event.time}
       <br />
       {event.location} · {event.tag}
-     <button>
+     </button>
     </li>
   );
 }
