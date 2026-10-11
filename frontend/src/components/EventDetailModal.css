@@ -1,0 +1,77 @@
+/* The event detail pop-up.
+   Uses the team's color variables from index.css, so it follows light/dark mode. */
+
+/* ---------- the pop-up ---------- */
+.modal-backdrop {
+  position: fixed;   /* stays put even if the page scrolls */
+  inset: 0;          /* top/right/bottom/left = 0 -> covers the whole window */
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;     /* flex + center = the box sits in the middle */
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;     /* draw on top of everything else */
+}
+
+.modal {
+  position: relative; /* so the × button can be placed in its corner */
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  text-align: left;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.modal h2 {
+  margin: 8px 0 16px;
+  color: var(--text-h);
+}
+
+.modal-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 24px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.event-detail-tag {
+  display: inline-block;
+  font-size: 0.8em;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  color: var(--text-h);
+}
+
+/* Two columns: labels on the left, values on the right */
+.event-detail-fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+
+.event-detail-fields dt {
+  font-weight: bold;
+  color: var(--text-h);
+}
+
+.event-detail-fields dd {
+  margin: 0;
+}
+
+.modal .error {
+  color: #c0392b;
+}
