@@ -1,0 +1,41 @@
+/* The Register button in the event pop-up.
+   Uses the team's color variables from index.css, so it follows light/dark mode. */
+
+.register-area {
+  margin-top: 20px;
+}
+
+.register-button {
+  width: 100%;
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.register-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+/* Keyboard users see a clear outline when the button is focused */
+.register-button:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 2px;
+}
+
+/* Disabled = registered, full, or sending: muted and not clickable */
+.register-button:disabled {
+  color: var(--text-h);
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  cursor: default;
+}
+
+.register-message {
+  margin: 8px 0 0;
+  color: #c0392b;
+}
