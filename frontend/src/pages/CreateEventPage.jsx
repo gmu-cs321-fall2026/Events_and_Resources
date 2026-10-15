@@ -1,6 +1,3 @@
-// Yasmin job: show a form -> remember what the user types -> when they click
-// Submit, pack it into an event object -> hand it to Person 2's API.
-
 // ================================================================
 // 1. IMPORTS: borrow things from other files
 // ================================================================
@@ -9,7 +6,7 @@
 // No "./" in the path = it comes from a package in node_modules.
 import { useState } from "react";
 
-// createEvent is Person 2's function that saves an event.
+// createEvent is a function that saves an event.
 // "../" = go up one folder (pages -> src), then into api/eventsApi.js
 import { createEvent } from "../api/eventsApi";
 
@@ -24,7 +21,7 @@ import "./CreateEventPage.css";
 // ================================================================
 
 // The blank form. One line per box on the page.
-// The names match Person 1's Event model, so everything connects.
+// The names match Event model, so everything connects.
 const EMPTY_FORM = {
   eventTitle: "",   // e.g. "Capital One Tech Talk"
   host: "",         // the employer, e.g. "Capital One"
@@ -50,7 +47,8 @@ const TAGS = [
 //    "export default" = this is the main thing this file shares,
 //    so App.jsx can import it.
 // ================================================================
-export default function CreateEventPage() {
+//Props: onCreated = a function App.jsx gives me. I call it after an even is saved, so the events lists knows to reload
+export default function CreateEventPage({ onCreated }) {
 
   // ---------------------------------------------------------------
   // a. STATE (memory)
@@ -103,7 +101,7 @@ export default function CreateEventPage() {
       tag: form.tag,
     };
 
-    // STEP 2: hand it to Person 2.
+    // STEP 2:
     // try/catch: try this; if anything fails, jump to catch instead of crashing.
     try {
       // await = wait here until createEvent finishes saving.
@@ -115,6 +113,10 @@ export default function CreateEventPage() {
 
       // STEP 4: clear every box so the next event can be typed.
       setForm(EMPTY_FORM);
+
+      // STEP 5: tell App.jsx, so the list reloads. ?.() = only call it if it was passed in.
+      onCreated?.();
+
     } catch (err) {
       // Something went wrong: show a red message with the error's description.
       setMessage({ type: "error", text: "Could not create event: " + err.message });
@@ -132,7 +134,7 @@ export default function CreateEventPage() {
   return (
     // One outer box. className connects it to my CSS (.create-event).
     <div className="create-event">
-      <h1> Create Event at GMU</h1>
+      <h1> Create Event</h1>
 
       {/* When this form is submitted, run handleSubmit.
           No () after handleSubmit: I'm passing the function, not calling it. */}

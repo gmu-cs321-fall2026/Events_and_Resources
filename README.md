@@ -72,7 +72,7 @@ Events\\\_and\\\_Resources/
 │       └── pages/
 │           ├── CreateEventPage.jsx / .css   # Form for creating an event
 │           └── EventsPage.jsx               # List of upcoming events
-├── src/                       # Java backend (layered architecture, in progress)
+├── backend/                       # Java backend (layered architecture, in progress)
 │   ├── Main.java              # Entry point
 │   ├── routers/               # HTTP endpoints
 │   ├── services/              # Business logic

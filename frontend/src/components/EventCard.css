@@ -1,0 +1,30 @@
+/* The clickable event cards in the list.
+   Uses the team's color variables from index.css. */
+
+.event-list {
+  list-style: none;
+  padding: 0;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-card {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.event-card:hover,
+.event-card:focus-visible {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
