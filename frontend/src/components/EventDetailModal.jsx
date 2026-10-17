@@ -7,6 +7,8 @@
 //   onClose = function EventsPage gives me; calling it closes the pop-up
 import { useEffect, useState } from "react";
 import { getEventById } from "../api/eventsApi";
+//YASMIN EDITED LINE BELOW
+import RegisterButton from "./RegisterButton";
 import "./EventDetailModal.css";
 
 
@@ -115,11 +117,18 @@ export default function EventDetailModal({ eventId, onClose }) {
           )}
         </dl>
 
-        {event.description && <p>{event.description}</p>}
+                {event.description && <p>{event.description}</p>}
 
-        {/* The Register button goes here. */}
+        {/* Register button. After a successful registration, add 1 to the
+            count shown above so "x / y registered" updates right away. */}
+        <RegisterButton
+          event={event}
+          onRegistered={() =>
+            setEvent((e) => ({ ...e, registeredCount: (e.registeredCount ?? 0) + 1 }))
+          }
+        />
       </>
-    );
+          );
   }
 
   return (
