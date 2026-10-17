@@ -28,11 +28,7 @@ The discovery layer of the platform: students find upcoming career fairs, worksh
 |---|---|
 | `GET /events` with filters, `POST /events` (carried over from Sprint 2) | 🚧 In progress |
 | Event calendar (day / week / month view) | 📋 Planned |
-| Personal calendar (registered events only); edit / cancel registration | 📋 Planned |
-| Registration confirmation via Notifications (`POST /notifications/dispatch`) | 📋 Planned (stub if Notifications isn't ready) |
-| Resources directory: `GET /resources` with search by major / industry | 📋 Planned |
-| Staff create / edit / delete for events and opportunities; `GET /opportunities` | 📋 Planned |
-| Student resource submissions (`pending` / `approved` / `denied`) | 📋 Planned |
+| Update Fields in Evnts(frontend) | 📋 Planned |
 | Fix at least one defect from a Q&I quality report | 📋 Planned |
 | Docker: add backend + database to the container | ⚠️ Still frontend only |
 
