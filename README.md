@@ -8,15 +8,33 @@ The discovery layer of the platform: students find upcoming career fairs, worksh
 
 \---
 
-## Current status (Sprint 1)
+## Current status (Sprint 3)
 
-|Feature|Status|
-|-|-|
-|Create Event page (form)|✅ Working|
-|Events list page|✅ Working|
-|Event model (`Event.js`)|✅ Done|
-|Docker (frontend)|✅ Working|
-|Java backend / HTTP API (`GET /events`, `POST /events`)|🚧 In progress|
+**Done in Sprint 2**
+
+| Feature | Status |
+|---|---|
+| Create Event page (form) | ✅ Working |
+| Events list + event detail pop-up | ✅ Working (frontend) |
+| Register button in the pop-up | ✅ Working |
+| Standard error format `{"error", "code", "detail"}` | ✅ Done |
+| Auth: 401 without a token, 403 for non-staff | ✅ Done (test tokens until Shared Core's auth is ready) |
+| `POST /events/{id}/register`, `GET /users/{userId}/events/registered` | ✅ Done |
+| PostgreSQL database | ✅ Connected (local Docker for now) |
+
+**Sprint 3 (Weeks 7–8): full feature set**
+
+| Feature | Status |
+|---|---|
+| `GET /events` with filters, `POST /events` (carried over from Sprint 2) | 🚧 In progress |
+| Event calendar (day / week / month view) | 📋 Planned |
+| Personal calendar (registered events only); edit / cancel registration | 📋 Planned |
+| Registration confirmation via Notifications (`POST /notifications/dispatch`) | 📋 Planned (stub if Notifications isn't ready) |
+| Resources directory: `GET /resources` with search by major / industry | 📋 Planned |
+| Staff create / edit / delete for events and opportunities; `GET /opportunities` | 📋 Planned |
+| Student resource submissions (`pending` / `approved` / `denied`) | 📋 Planned |
+| Fix at least one defect from a Q&I quality report | 📋 Planned |
+| Docker: add backend + database to the container | ⚠️ Still frontend only |
 
 > \\\*\\\*Note:\\\*\\\* For now, events are saved in your \\\*\\\*browser's localStorage\\\*\\\*, not a database. Events you create show up only in the browser you made them in, and clearing browser data deletes them. This changes once the backend API is connected.
 
