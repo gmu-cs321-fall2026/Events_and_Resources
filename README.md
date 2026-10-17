@@ -27,9 +27,10 @@ The discovery layer of the platform: students find upcoming career fairs, worksh
 | Feature | Status |
 |---|---|
 | `GET /events` with filters, `POST /events` (carried over from Sprint 2) | 🚧 In progress |
+| `PostgresSQL replacing in memory` (carried over from Sprint 2) | 🚧 In progress |
 | Event calendar (day / week / month view) | 📋 Planned |
 | Update Fields in Evnts(frontend) | 📋 Planned |
-| Fix at least one defect from a Q&I quality report | 📋 Planned |
+| Q&I  report | 📋 Planned |
 | Docker: add backend + database to the container | ⚠️ Still frontend only |
 
 > \\\*\\\*Note:\\\*\\\* For now, events are saved in your \\\*\\\*browser's localStorage\\\*\\\*, not a database. Events you create show up only in the browser you made them in, and clearing browser data deletes them. This changes once the backend API is connected.
