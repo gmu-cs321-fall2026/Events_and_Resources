@@ -75,7 +75,7 @@ export default function EventDetailModal({ eventId, onClose }) {
     content = (
       <>
         {/* <> </> is a "fragment": groups elements without adding an extra <div> */}
-        <span className="event-detail-tag">{event.tag}</span>
+        <span className="event-detail-tag">{event.category}</span>
         <h2 id="event-detail-title">{event.eventTitle}</h2>
 
         {/* <dl> = a "description list": pairs of <dt> (label) and <dd> (value) */}

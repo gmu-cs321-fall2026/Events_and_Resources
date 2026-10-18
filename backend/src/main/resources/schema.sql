@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS events (
     event_date       DATE         NOT NULL,   -- "date" and "time" are SQL type names, so we prefix them
     event_time       TIME         NOT NULL,
     location         VARCHAR(200) NOT NULL,
-    tag              VARCHAR(50)  NOT NULL,
+    category         VARCHAR(50)  NOT NULL,
+    audience         VARCHAR(500) NOT NULL,
+    format           VARCHAR(50)  NOT NULL,
     register_link    VARCHAR(500),            -- optional, can be NULL
     capacity         INT          NOT NULL DEFAULT 0, -- 0 = unlimited
     registered_count INT          NOT NULL DEFAULT 0,

@@ -30,7 +30,7 @@ const EMPTY_FORM = {
   location: "",     // e.g. "Horizon Hall"
   audience: "",     // e.g: "Undergrads", "Post-grads", "CS major"
   format: "",       // one of the FORMATS below
-  category: "",     // one of the TAGS below
+  category: "",     // one of the CATEGORIES below
   registerLink: "", // optional, e.g. "https://..."
   capacity: "",     // optional, e.g: 0 (or blank, as unlimited)
 };
@@ -38,7 +38,7 @@ const EMPTY_FORM = {
 // The choices for the format dropdown. [] makes an array (a list).
 const FORMATS = [ "Virtual", "In-person" ];
 
-// The choices for the Tag dropdown. [ ] makes an array (a list).
+// The choices for the Category dropdown. [ ] makes an array (a list).
 const CATEGORIES = [
   "Internal",
   "Career Fair",
@@ -98,7 +98,7 @@ export default function CreateEventPage({ onCreated }) {
 
     // STEP 1: pack the event (the "order ticket").
     // .trim() removes extra spaces at the start/end of typed text.
-    // date, time, and tag come from pickers, so they don't need it.
+    // date, time, and category come from pickers, so they don't need it.
     const event = {
       eventTitle: form.eventTitle.trim(),
       host: form.host.trim(),
