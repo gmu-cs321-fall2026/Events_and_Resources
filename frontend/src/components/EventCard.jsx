@@ -10,7 +10,7 @@ export default function EventCard({ event, onSelect }) {
      <button type="button" className="event-card" onClick={onSelect}>
       <strong>{event.eventTitle}</strong> — {event.date} {event.time}
       <br />
-      {event.location} · {event.tag}
+      {event.location} · {event.category}
      </button>
     </li>
   );

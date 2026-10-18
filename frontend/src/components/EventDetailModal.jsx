@@ -7,7 +7,6 @@
 //   onClose = function EventsPage gives me; calling it closes the pop-up
 import { useEffect, useState } from "react";
 import { getEventById } from "../api/eventsApi";
-//YASMIN EDITED LINE BELOW
 import RegisterButton from "./RegisterButton";
 import "./EventDetailModal.css";
 
@@ -106,18 +105,19 @@ export default function EventDetailModal({ eventId, onClose }) {
               <dd>{event.audience}</dd>
             </>
           )}
-          {/* capacity 0 = unlimited, so only show spots for limited events */}
-          {event.capacity > 0 && (
-            <>
-              <dt>Spots</dt>
-              <dd>
-                {event.registeredCount ?? 0} / {event.capacity} registered
-              </dd>
-            </>
-          )}
-        </dl>
 
-                {event.description && <p>{event.description}</p>}
+          {event.description && <p>{event.description}</p>}
+
+          {/* Everyone sees the register link, but only if the event has one.
+            target="_blank" opens it in a new tab; rel="noopener noreferrer"
+            stops that new tab from being able to control this page (a security habit). */}
+        {event.registerLink && (
+          <p>
+            <a href={event.registerLink} target="_blank" rel="noopener noreferrer">
+              Register here
+            </a>
+          </p>
+        )}
 
         {/* Register button. After a successful registration, add 1 to the
             count shown above so "x / y registered" updates right away. */}
