@@ -125,7 +125,7 @@ public class RegistrationRepository {
                 "SELECT e.id, e.event_title, e.host, "                                   // e. = from the events table
                         + "       to_char(e.event_date, 'YYYY-MM-DD') AS date, "         // 2026-10-22
                         + "       to_char(e.event_time, 'HH24:MI')    AS time, "         // 17:30
-                        + "       e.location, e.tag, e.register_link, e.capacity, e.registered_count, "
+                        + "       e.location, e.category, e.register_link, e.capacity, e.registered_count, "
                         + "       to_char(r.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS') AS registered_at " // r. = from registrations; "T" is a literal letter
                         + "FROM events e "                                               // "e" is a short nickname for events
                         + "JOIN registrations r ON r.event_id = e.id "                   // "r" is a short nickname for registrations
@@ -155,7 +155,7 @@ public class RegistrationRepository {
             rs.getString("date"),          // the "AS date" column
             rs.getString("time"),          // the "AS time" column
             rs.getString("location"),
-            rs.getString("tag"),
+            rs.getString("category"),
             rs.getString("register_link"), // null if the event has no link
             rs.getInt("capacity"),
             rs.getInt("registered_count"),

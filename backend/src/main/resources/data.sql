@@ -4,7 +4,7 @@
 
 -- Unlimited capacity (0): anyone can register.
 INSERT INTO events (event_title, host, event_date, event_time, location, category, audience, format, capacity)
-SELECT 'Fall Career Fair', 'Career Services', '2026-10-28', '10:00', 'EagleBank Arena', 'Career Fair', 0
+SELECT 'Fall Career Fair', 'Career Services', '2026-10-28', '10:00', 'EagleBank Arena', 'Career Fair', "All Students", "In-person", 0
 WHERE NOT EXISTS (SELECT 1 FROM events WHERE event_title = 'Fall Career Fair');
 
 -- Limited capacity: 30 seats.

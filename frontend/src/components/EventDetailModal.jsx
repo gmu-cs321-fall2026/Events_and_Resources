@@ -106,18 +106,20 @@ export default function EventDetailModal({ eventId, onClose }) {
             </>
           )}
 
-          {event.description && <p>{event.description}</p>}
+	{/* Spots: how many seats are taken out of the total.
+              capacity 0 = unlimited, so only show spots for limited events.
+              ?? 0 = "if registeredCount is missing (null/undefined), use 0". */}
+          {event.capacity > 0 && (
+            <>
+              <dt>Spots</dt>
+              <dd>
+                {event.registeredCount ?? 0} / {event.capacity} registered
+              </dd>
+            </>
+          )}
+        </dl>
 
-          {/* Everyone sees the register link, but only if the event has one.
-            target="_blank" opens it in a new tab; rel="noopener noreferrer"
-            stops that new tab from being able to control this page (a security habit). */}
-        {event.registerLink && (
-          <p>
-            <a href={event.registerLink} target="_blank" rel="noopener noreferrer">
-              Register here
-            </a>
-          </p>
-        )}
+          {event.description && <p>{event.description}</p>}
 
         {/* Register button. After a successful registration, add 1 to the
             count shown above so "x / y registered" updates right away. */}

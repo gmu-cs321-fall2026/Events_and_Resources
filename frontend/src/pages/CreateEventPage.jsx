@@ -228,7 +228,7 @@ export default function CreateEventPage({ onCreated }) {
             name="audience"
             value={form.audience}
             onChange={handleChange}
-            placeholder="Undergrads"
+            placeholder="All Students"
             required
           />
         </label>
@@ -280,8 +280,7 @@ export default function CreateEventPage({ onCreated }) {
           />
         </label>
 
-        {/* Capacity (optional). Only staff create events, and only staff
-            see this number in the pop-up; students never see it. */}
+        {/* Capacity (optional). */}
         <label>
           Capacity (leave blank for unlimited)
           {/* type="number" + min="0" = the browser only allows whole numbers 0 or more */}
