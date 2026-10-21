@@ -13,7 +13,8 @@ package edu.gmu.cs321.events_resources.model;
  * WHAT THE FRONTEND / OTHER TEAMS RECEIVE (one item of "items"):
  *   {"id": 3, "eventTitle": "Capital One Tech Talk", "host": "Capital One",
  *    "date": "2026-10-22", "time": "17:30", "location": "Johnson Center",
- *    "tag": "Employer Info Session", "registerLink": null,
+ *    "category": "Employer Info Session", "audience": "All Students",
+ *    "format": "In-person", "registerLink": null,
  *    "capacity": 1, "registeredCount": 1, "registeredAt": "2026-10-12T19:45:03"}
  *
  * WHY NOT REUSE AN Event CLASS?
@@ -32,7 +33,9 @@ public record RegisteredEvent(
         String date,          // "YYYY-MM-DD"                           (events.event_date)
         String time,          // "HH:mm", 24-hour                       (events.event_time)
         String location,      // e.g. "Horizon Hall 2400"               (events.location)
-        String tag,           // e.g. "Workshop"                        (events.tag)
+        String category,      // e.g. "Workshop"                        (events.category)
+	String audience,      // e.g. "CS major"                        (events.audience)
+	String format,        // e.g. "In-person"                       (events.format)
         String registerLink,  // optional external link; may be null    (events.register_link)
         int capacity,         // max seats; 0 = unlimited               (events.capacity)
         int registeredCount,  // seats taken so far                     (events.registered_count)
