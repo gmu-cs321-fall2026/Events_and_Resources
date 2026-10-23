@@ -1,13 +1,15 @@
 package edu.gmu.cs321.events_resources.model;
 
 public record Event(
-    long id,
+    Long id,
     String eventTitle,
     String host,
     String date,
     String time,
     String location,
-    String tag,
+	String category,
+	String audience,
+	String format,
     String registerLink,
     int capacity,
     int registeredCount
