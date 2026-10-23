@@ -1,0 +1,136 @@
+# =====================================================================
+# CI (Continuous Integration) for Subsystem 3: Career Events & Resources
+#
+# GitHub reads every .yml file in .github/workflows/ and runs it on its
+# own computers ("runners"). This one checks BOTH halves of our repo:
+#   backend/   Spring Boot + Maven + PostgreSQL  -> compile + JUnit tests
+#   frontend/  Vite + React + npm               -> ESLint + build + Vitest
+#
+# Based on the course's Java (Maven) and Node starter workflows, merged into
+# ONE job, because the course ruleset requires a single check named
+# "lint-and-test". If any step fails, the check turns red and the pull
+# request can't be merged into main.
+# =====================================================================
+
+# The name shown in the repo's Actions tab.
+name: CI
+
+# WHEN to run.
+on:
+  push:
+    branches: [main]          # every push (and merge) to main
+  pull_request:
+    branches: [main]          # every pull request that targets main
+
+jobs:
+  lint-and-test:
+    # This exact name is what the branch ruleset looks for. Don't rename it.
+    name: lint-and-test
+
+    # A fresh Linux machine from GitHub, wiped after every run.
+    runs-on: ubuntu-latest
+
+    # -----------------------------------------------------------------
+    # SERVICE CONTAINER: a real PostgreSQL database just for this run.
+    # Our backend test (@SpringBootTest) starts the whole app, and the app
+    # connects to Postgres at startup and runs schema.sql + data.sql.
+    # No database = the test fails, so we start one here.
+    #
+    # The values match the defaults in backend/src/main/resources/application.properties
+    # (localhost:5432, database "events", user "postgres", password "dev"),
+    # the same as the docker command in our README.
+    # -----------------------------------------------------------------
+    services:
+      postgres:
+        image: postgres:17              # same version we run on our laptops
+        env:
+          POSTGRES_PASSWORD: dev        # matches spring.datasource.password default
+          POSTGRES_DB: events           # matches the "/events" at the end of the URL
+        ports:
+          - 5432:5432                   # runner's port 5432 -> container's port 5432
+        # Wait until Postgres actually accepts connections before the steps
+        # start; otherwise the tests could start before the database is ready.
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      # Download our repo's code onto the runner.
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      # ===============================================================
+      # BACKEND (backend/)
+      # ===============================================================
+
+      # Install Java. pom.xml says <java.version>17</java.version>, so use 17.
+      # "temurin" = a free, standard build of Java.
+      # cache: maven = save downloaded libraries between runs (faster).
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      # mvnw = the Maven wrapper committed in backend/. It downloads the exact
+      # Maven version our project uses, so CI matches our laptops.
+      # "verify" = compile, then run every test in backend/src/test.
+      # -B = "batch mode": plain log output with no interactive prompts.
+      - name: Backend - build and test (Maven)
+        working-directory: backend    # run this step inside backend/
+        run: ./mvnw -B verify
+        # The app reads DB_URL / DB_USER / DB_PASSWORD if they're set.
+        # They already default to the right values, but we write them out
+        # so it's clear where the test database is.
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/events
+          DB_USER: postgres
+          DB_PASSWORD: dev
+
+      # ===============================================================
+      # FRONTEND (frontend/)
+      # ===============================================================
+
+      # Install Node 22 (same as our Dockerfile's "FROM node:22").
+      # cache-dependency-path: our package-lock.json is in frontend/, not
+      # the repo root, so we point the cache at it.
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # npm ci = install EXACTLY what package-lock.json lists.
+      # It fails if package.json and package-lock.json disagree, which
+      # catches "works on my machine" problems.
+      - name: Frontend - install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # The linter: "lint": "eslint ." in package.json, rules in eslint.config.js.
+      - name: Frontend - lint (ESLint)
+        working-directory: frontend
+        run: npm run lint
+
+      # vite build = bundle the app the way it would ship. Fails on broken imports.
+      - name: Frontend - build (Vite)
+        working-directory: frontend
+        run: npm run build
+
+      # "test": "vitest run" in package.json; runs every *.test.js file once.
+      - name: Frontend - test (Vitest)
+        working-directory: frontend
+        run: npm test
+
+      # ===============================================================
+      # CONTAINER
+      # ===============================================================
+
+      # "docker build" must work with no extra steps. Building the
+      # image here catches a broken Dockerfile before it reaches main.
+      - name: Docker - build image
+        run: docker build -t events-resources .
