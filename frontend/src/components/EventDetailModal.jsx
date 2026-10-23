@@ -7,7 +7,6 @@
 //   onClose = function EventsPage gives me; calling it closes the pop-up
 import { useEffect, useState } from "react";
 import { getEventById } from "../api/eventsApi";
-//YASMIN EDITED LINE BELOW
 import RegisterButton from "./RegisterButton";
 import "./EventDetailModal.css";
 
@@ -76,7 +75,7 @@ export default function EventDetailModal({ eventId, onClose }) {
     content = (
       <>
         {/* <> </> is a "fragment": groups elements without adding an extra <div> */}
-        <span className="event-detail-tag">{event.tag}</span>
+        <span className="event-detail-tag">{event.category}</span>
         <h2 id="event-detail-title">{event.eventTitle}</h2>
 
         {/* <dl> = a "description list": pairs of <dt> (label) and <dd> (value) */}
@@ -106,7 +105,10 @@ export default function EventDetailModal({ eventId, onClose }) {
               <dd>{event.audience}</dd>
             </>
           )}
-          {/* capacity 0 = unlimited, so only show spots for limited events */}
+
+	{/* Spots: how many seats are taken out of the total.
+              capacity 0 = unlimited, so only show spots for limited events.
+              ?? 0 = "if registeredCount is missing (null/undefined), use 0". */}
           {event.capacity > 0 && (
             <>
               <dt>Spots</dt>
@@ -117,7 +119,7 @@ export default function EventDetailModal({ eventId, onClose }) {
           )}
         </dl>
 
-                {event.description && <p>{event.description}</p>}
+          {event.description && <p>{event.description}</p>}
 
         {/* Register button. After a successful registration, add 1 to the
             count shown above so "x / y registered" updates right away. */}

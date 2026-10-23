@@ -28,11 +28,18 @@ const EMPTY_FORM = {
   date: "",         // e.g. "2026-10-20" (from the calendar picker)
   time: "",         // e.g. "15:00" (24-hour clock, from the time picker)
   location: "",     // e.g. "Horizon Hall"
-  tag: "",          // one of the TAGS below
+  audience: "",     // e.g: "Undergrads", "Post-grads", "CS major"
+  format: "",       // one of the FORMATS below
+  category: "",     // one of the CATEGORIES below
+  registerLink: "", // optional, e.g. "https://..."
+  capacity: "",     // optional, e.g: 0 (or blank, as unlimited)
 };
 
-// The choices for the Tag dropdown. [ ] makes an array (a list).
-const TAGS = [
+// The choices for the format dropdown. [] makes an array (a list).
+const FORMATS = [ "Virtual", "In-person" ];
+
+// The choices for the Category dropdown. [ ] makes an array (a list).
+const CATEGORIES = [
   "Internal",
   "Career Fair",
   "Workshop",
@@ -91,14 +98,18 @@ export default function CreateEventPage({ onCreated }) {
 
     // STEP 1: pack the event (the "order ticket").
     // .trim() removes extra spaces at the start/end of typed text.
-    // date, time, and tag come from pickers, so they don't need it.
+    // date, time, and category come from pickers, so they don't need it.
     const event = {
       eventTitle: form.eventTitle.trim(),
       host: form.host.trim(),
       date: form.date,
       time: form.time,
       location: form.location.trim(),
-      tag: form.tag,
+      audience: form.audience.trim(),
+      format: form.format,
+      category: form.category,
+      registerLink: form.registerLink.trim() || null, // if blank, send null
+      capacity: Number(form.capacity), // Number("") -> 0 means unlimited
     };
 
     // STEP 2:
@@ -210,21 +221,78 @@ export default function CreateEventPage({ onCreated }) {
           />
         </label>
 
-        {/* Tag: a dropdown. <select> is the menu, <option> is each choice. */}
+        {/* Audience */}
         <label>
-          Tag
-          <select name="tag" value={form.tag} onChange={handleChange} required>
-            {/* value="" = "nothing picked yet", so required blocks Submit */}
-            <option value="">-- choose a tag --</option>
+          Audience
+          <input
+            name="audience"
+            value={form.audience}
+            onChange={handleChange}
+            placeholder="All Students"
+            required
+          />
+        </label>
 
-            {/* .map = a loop: for each tag in TAGS, make one <option>.
+	{/* Format: a dropdown. <select> is the menu, <option> is each choice. */}
+        <label>
+          Format
+          <select name="format" value={form.format} onChange={handleChange} required>
+            {/* value="" = "nothing picked yet", so required blocks Submit */}
+            <option value="">-- choose a format --</option>
+
+            {/* .map = a loop: for each format in FORMATS, make one <option>.
                 key = a unique ID React needs for every item in a list. */}
-            {TAGS.map((tag) => (
-              <option key={tag} value={tag}>
-                {tag}
+            {FORMATS.map((format) => (
+              <option key={format} value={format}>
+                {format}
               </option>
             ))}
           </select>
+        </label>
+
+        {/* Category: a dropdown. <select> is the menu, <option> is each choice. */}
+        <label>
+          Category
+          <select name="category" value={form.category} onChange={handleChange} required>
+            {/* value="" = "nothing picked yet", so required blocks Submit */}
+            <option value="">-- choose a category --</option>
+
+            {/* .map = a loop: for each category in CATEGORIES, make one <option>.
+                key = a unique ID React needs for every item in a list. */}
+            {CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* Register Link (optional: no "required") */}
+        <label>
+          Register Link (optional)
+          {/* type="url" = the browser checks it looks like a web address */}
+          <input
+            type="url"
+            name="registerLink"
+            value={form.registerLink}
+            onChange={handleChange}
+            placeholder="https://example.com/register"
+          />
+        </label>
+
+        {/* Capacity (optional). */}
+        <label>
+          Capacity (leave blank for unlimited)
+          {/* type="number" + min="0" = the browser only allows whole numbers 0 or more */}
+          <input
+            type="number"
+            name="capacity"
+            value={form.capacity}
+            onChange={handleChange}
+            min="0"
+            step="1"
+            placeholder="30"
+          />
         </label>
 
         {/* type="submit" = clicking this submits the form -> handleSubmit runs */}
