@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;      // marks a
 import org.springframework.web.bind.annotation.RestControllerAdvice;     // marks this class as the error handler for ALL controllers
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;    // Spring throws this for a wrong type in the URL (400)
 import org.springframework.web.servlet.resource.NoResourceFoundException;   // Spring throws this for a URL that doesn't exist (404)
-
+import org.springframework.http.converter.HttpMessageNotReadableException;   // Spring throws this when the request body isn't valid JSON (400)
 /**
  * Catches exceptions thrown anywhere in a controller or service and turns them into
  * the standard error JSON. Because of this class, no endpoint has to build error
@@ -31,6 +31,12 @@ public class ErrorHandler {
     public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         return respond(HttpStatus.BAD_REQUEST, "Invalid value in the request", "VALIDATION_ERROR",
                 e.getName() + ": must be a valid " + typeName(e));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleBadJson(HttpMessageNotReadableException e) {
+        return respond(HttpStatus.BAD_REQUEST, "The request body is not valid JSON", "INVALID_JSON",
+                "Check for a missing body, a typo in the JSON, or a value of the wrong type");
     }
 
     /** No endpoint exists at this URL. */
