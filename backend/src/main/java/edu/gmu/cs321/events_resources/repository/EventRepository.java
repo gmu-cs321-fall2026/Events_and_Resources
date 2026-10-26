@@ -1,12 +1,16 @@
 
 package edu.gmu.cs321.events_resources.repository;
 
-import edu.gmu.cs321.events_resources.model.Event;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+
+import edu.gmu.cs321.events_resources.model.Event;
 
 @Repository
 public class EventRepository {
@@ -57,4 +61,42 @@ public class EventRepository {
 		rs.getString("register_link"), // null if the event has no link
 		rs.getInt("capacity"),
 		rs.getInt("registered_count"));
+
+	/**
+     * Our list of events from most recent. Used by GET /events?page=&pageSize=
+     * ORDER BY event_date, event_time -> the contract says "sorted by date, then time".
+     *          id is a tiebreaker: two events at the same date and time always come
+     *          back in the same order, so an event can't jump between page 1 and page 2.
+     * LIMIT  = return at most this many rows (the page size).
+     * OFFSET = skip this many rows first (page 3 with pageSize 20 -> skip 40). makes NEXT PAGE POSSIBLE
+	 * offset = (page − 1) × pageSize.
+     * Uses EVENT_COLUMNS and EVENT_MAPPER (above, shared with insert),
+     * so every method returns events in exactly the same shape.
+     */
+    public List<Event> findAll(int limit, int offset) {
+        return jdbc.query(                          // query() = "I expect MANY rows back, give me a List"
+                "SELECT " + EVENT_COLUMNS + " "
+                        + "FROM events "
+                        + "ORDER BY event_date, event_time, id "
+                        + "LIMIT ? OFFSET ?",
+                EVENT_MAPPER,                       // how to turn each row into an Event
+                limit, offset);                     // fills in the two "?" in order
+        // No events at all -> an empty List (never null), which becomes "items": []
+    }
+
+    /**
+     * The one event with this id, or Optional.empty() if there isn't one.
+     * Used by GET /events/{id}: empty -> 404 NOT_FOUND.
+     * WHY query() AND NOT queryForObject()?
+     *   queryForObject() throws an exception when zero rows come back.
+     *   query() just returns an empty List, which is easier to turn into "not found".
+     *   id is the PRIMARY KEY, so the List has at most one event in it.
+     */
+    public Optional<Event> findById(long id) {
+        List<Event> rows = jdbc.query(
+                "SELECT " + EVENT_COLUMNS + " FROM events WHERE id = ?",
+                EVENT_MAPPER,
+                id);                                // fills in the "?" (never glue id into the string)
+        return rows.stream().findFirst();           // first event if there is one, otherwise empty
+    }
 }
