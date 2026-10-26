@@ -12,5 +12,6 @@ public record Event(
 	String format,
     String registerLink,
     int capacity,
-    int registeredCount
+    Integer registeredCount
+    //changed registeredCount to Integer bc Json Error in Form submission bc Integer can hold 0 and int can't 
 ) {}
