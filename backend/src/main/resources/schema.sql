@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS registrations (
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS resource (
 	id			BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	user_id		BIGINT NOT NULL REFERENCES,
+	user_id		BIGINT NOT NULL,
 	owner		VARCHAR(200) NOT NULL,
 	link		VARCHAR(500),				  -- optional, can be NULL
 	status      VARCHAR(20)  NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected'))
@@ -103,14 +103,14 @@ CREATE TABLE IF NOT EXISTS opportunity (
 -- ---------------------------------------------------------------------------
 -- Audience_events/resource/opportunity: one row per audience relation.
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS resource_audience (
+CREATE TABLE IF NOT EXISTS resource_audiences (
 	resource_id BIGINT NOT NULL REFERENCES resource(id) ON DELETE CASCADE,
-	audience_id BIGINT NOT NULL REFERENCES audience(id) ON DELETE CASCADE,
+	audience_id BIGINT NOT NULL REFERENCES audiences(id) ON DELETE CASCADE,
 	PRIMARY KEY (resource_id, audience_id)
 );
 
-CREATE TABLE IF NOT EXISTS opportunity_audience (
+CREATE TABLE IF NOT EXISTS opportunity_audiences (
 	opportunity_id BIGINT NOT NULL REFERENCES opportunity(id) ON DELETE CASCADE,
-	audience_id BIGINT NOT NULL REFERENCES audience(id) ON DELETE CASCADE,
+	audience_id BIGINT NOT NULL REFERENCES audiences(id) ON DELETE CASCADE,
 	PRIMARY KEY (opportunity_id, audience_id)
 );
