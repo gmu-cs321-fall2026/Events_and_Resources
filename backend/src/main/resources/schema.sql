@@ -76,3 +76,47 @@ CREATE TABLE IF NOT EXISTS registrations (
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     UNIQUE (event_id, user_id)                -- the same student can't register twice for one event
 );
+
+-- ---------------------------------------------------------------------------
+-- Resources: one row per career resource.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS resource (
+	id			BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	user_id		BIGINT NOT NULL, REFERENCES users(id)
+	owner		VARCHAR(200) NOT NULL,
+	link		VARCHAR(500),				  -- optional, can be NULL
+	status      VARCHAR(20)  NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected'))
+);
+
+-- ---------------------------------------------------------------------------
+-- Opportunities: one row per career opportunity.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS opportunity (
+	id			BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	title		VARCHAR(200) NOT NULL,
+	date_posted DATE         NOT NULL,
+	deadline	DATE		 NOT NULL,
+	employer	VARCHAR(200) NOT NULL,
+	link		VARCHAR(500) NOT NULL,
+);
+
+-- ---------------------------------------------------------------------------
+-- Audience_events/resource/opportunity: one row per audience relation.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS event_audience (
+	event_id BIGINT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+	audience_id BIGINT NOT NULL REFERENCES audience(id) ON DELETE CASCADE,
+	PRIMARY KEY (event_id, audience_id)
+);
+
+CREATE TABLE IF NOT EXISTS resource_audience (
+	resource_id BIGINT NOT NULL REFERENCES resource(id) ON DELETE CASCADE,
+	audience_id BIGINT NOT NULL REFERENCES audience(id) ON DELETE CASCADE,
+	PRIMARY KEY (resource_id, audience_id)
+);
+
+CREATE TABLE IF NOT EXISTS opportunity_audience (
+	opportunity_id BIGINT NOT NULL REFERENCES opportunity(id) ON DELETE CASCADE,
+	audience_id BIGINT NOT NULL REFERENCES audience(id) ON DELETE CASCADE,
+	PRIMARY KEY (opportunity_id, audience_id)
+);
