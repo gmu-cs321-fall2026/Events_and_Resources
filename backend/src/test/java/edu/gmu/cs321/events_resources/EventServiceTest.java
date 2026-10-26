@@ -10,13 +10,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // Java's date and time types (the fake repository receives these)
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;       // the fake findPage returns a List of events
+import java.util.Optional;   // the fake findById returns an Optional (an event, or empty)
 
 // Named status codes: BAD_REQUEST = 400
 import org.springframework.http.HttpStatus;
 
 // The real classes we're testing / using.
 import edu.gmu.cs321.events_resources.common.ApiException;
+import edu.gmu.cs321.events_resources.common.PagedResponse;
 import edu.gmu.cs321.events_resources.model.Event;
+import edu.gmu.cs321.events_resources.model.EventFilter;
 import edu.gmu.cs321.events_resources.repository.EventRepository;
 import edu.gmu.cs321.events_resources.service.EventService; 
 
@@ -49,6 +53,36 @@ class EventServiceTest {
                     event.location(), event.category(), event.audience(), event.format(),
                     event.registerLink(), event.capacity(), event.registeredCount());
         }
+
+        // ---- Fakes for GET /events and GET /events/{id} ----
+        EventFilter lastFilter;   // the filter the service built (null = findPage was never called)
+        int lastLimit;            // the LIMIT it asked for
+        int lastOffset;           // the OFFSET it asked for
+
+        @Override
+        public List<Event> findPage(EventFilter filter, int limit, int offset) {
+            lastFilter = filter;
+            lastLimit = limit;
+            lastOffset = offset;
+            return List.of(sampleEvent(1L));            // pretend the database found one event
+        }
+
+        @Override
+        public long count(EventFilter filter) {
+            return 57;                                   // pretend 57 events match in total
+        }
+
+        @Override
+        public Optional<Event> findById(long id) {
+            // Only event 1 "exists" in this fake database.
+            return id == 1 ? Optional.of(sampleEvent(1L)) : Optional.empty();
+        }
+    }
+
+    /** Helper: a saved event with this id. */
+    private static Event sampleEvent(Long id) {
+        return new Event(id, "Resume Workshop", "Career Services", "2026-10-20", "15:00",
+                "Horizon Hall 2400", "Workshop", "All Students", "In-person", null, 30, 0);
     }
 
     private final FakeEventRepository repository = new FakeEventRepository();
@@ -138,5 +172,93 @@ class EventServiceTest {
         ApiException e = assertThrows(ApiException.class, () -> service.createEvent(wrong));
 
         assertTrue(e.getDetail().contains("capacity:"));
+    }
+
+    // =======================================================================
+    // GET /events (MASON-31, MASON-43)
+    // =======================================================================
+
+    @Test
+    void noFiltersMeansEveryFieldIsNull() {
+        PagedResponse<Event> result = service.listEvents(1, 20, null, null, null, null, null);
+
+        assertEquals(EventFilter.none(), repository.lastFilter);   // records compare field by field
+        assertEquals(1, result.items().size());
+        assertEquals(57L, result.totalCount());
+    }
+
+    @Test
+    void filtersArePassedToTheRepositoryCleaned() {
+        service.listEvents(1, 20, "2026-10-27", "2026-11-02", "Workshop", "  CS Majors ", "Virtual");
+
+        EventFilter f = repository.lastFilter;
+        assertEquals(LocalDate.of(2026, 10, 27), f.from());
+        assertEquals(LocalDate.of(2026, 11, 2), f.to());
+        assertEquals("Workshop", f.category());
+        assertEquals("CS Majors", f.audience());                   // spaces trimmed
+        assertEquals("Virtual", f.format());
+    }
+
+    @Test
+    void blankFiltersAreIgnored() {
+        // ?category=&format= (empty values) should act like they weren't sent.
+        service.listEvents(1, 20, "", " ", "", "", "");
+
+        assertEquals(EventFilter.none(), repository.lastFilter);
+    }
+
+    @Test
+    void pageTurnsIntoLimitAndOffset() {
+        service.listEvents(3, 10, null, null, null, null, null);
+
+        assertEquals(10, repository.lastLimit);                      // 10 per page
+        assertEquals(20, repository.lastOffset);                     // page 3 skips the first 20
+    }
+
+    @Test
+    void badFiltersAreAllReportedAtOnce() {
+        ApiException e = assertThrows(ApiException.class,
+                () -> service.listEvents(1, 20, "2026-13-01", "nope", "Party", null, "in person"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, e.getStatus());
+        assertEquals("VALIDATION_ERROR", e.getCode());
+        assertTrue(e.getDetail().contains("from:"));
+        assertTrue(e.getDetail().contains("to:"));
+        assertTrue(e.getDetail().contains("category:"));
+        assertTrue(e.getDetail().contains("format:"));
+        assertNull(repository.lastFilter);                           // the database was never asked
+    }
+
+    @Test
+    void fromAfterToIsRejected() {
+        ApiException e = assertThrows(ApiException.class,
+                () -> service.listEvents(1, 20, "2026-11-05", "2026-11-01", null, null, null));
+
+        assertTrue(e.getDetail().contains("to: must be on or after from"));
+    }
+
+    @Test
+    void pageSizeOver50IsRejected() {
+        ApiException e = assertThrows(ApiException.class,
+                () -> service.listEvents(1, 51, null, null, null, null, null));
+
+        assertEquals("VALIDATION_ERROR", e.getCode());
+    }
+
+    // =======================================================================
+    // GET /events/{id} (MASON-43)
+    // =======================================================================
+
+    @Test
+    void existingEventIsReturned() {
+        assertEquals(Long.valueOf(1), service.getEvent(1).id());
+    }
+
+    @Test
+    void missingEventIs404() {
+        ApiException e = assertThrows(ApiException.class, () -> service.getEvent(999));
+
+        assertEquals(HttpStatus.NOT_FOUND, e.getStatus());
+        assertEquals("NOT_FOUND", e.getCode());
     }
 }
