@@ -1,13 +1,13 @@
-
 package edu.gmu.cs321.events_resources.service;
 import edu.gmu.cs321.events_resources.common.ApiException;
+import edu.gmu.cs321.events_resources.common.PagedResponse;  // the standard list shape: {items, page, pageSize, totalCount}
 import edu.gmu.cs321.events_resources.model.Event;
+import edu.gmu.cs321.events_resources.model.EventFilter;     // the checked filters for GET /events
 import edu.gmu.cs321.events_resources.repository.EventRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -80,7 +80,92 @@ public class EventService {
  
         return eventRepository.insert(clean, date, time);
     }
- 
+
+    // -----------------------------------------------------------------------
+    // READING EVENTS (MASON-43 and MASON-31)
+    // -----------------------------------------------------------------------
+
+    /**
+     * GET /events: one page of events, soonest first, optionally filtered.
+     *
+     * Every filter is optional. The controller passes null for any that aren't in the URL.
+     * Filters are combined with AND: ?category=Workshop&format=Virtual = virtual workshops.
+     *
+     * Bad values give 400 VALIDATION_ERROR, listing every bad one in "detail", e.g.
+     *   "from: must be a real date in YYYY-MM-DD format; format: must be one of In-person, Virtual"
+     * An audience name that matches no event isn't an error: you just get an empty list.
+     */
+    public PagedResponse<Event> listEvents(int page, int pageSize, String from, String to,
+                                           String category, String audience, String format) {
+        // 400 if page/pageSize are out of range (page < 1, or pageSize not 1-50).
+        PagedResponse.validate(page, pageSize);
+
+        List<String> problems = new ArrayList<>();
+
+        // Dates: optional, but if given they must be real days.
+        LocalDate fromDate = optionalDate(from, "from", problems);
+        LocalDate toDate   = optionalDate(to,   "to",   problems);
+        // isAfter = "is fromDate later than toDate?" e.g. from=Nov 5, to=Nov 1 can never match anything.
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            problems.add("to: must be on or after from");
+        }
+
+        // Dropdown filters: optional, but if given they must be an allowed value.
+        String categoryFilter = optionalOneOf(category, "category", CATEGORIES, problems);
+        String formatFilter   = optionalOneOf(format,   "format",   FORMATS,    problems);
+
+        // Audience: optional free text, matched against the audiences table (ignoring upper/lower case).
+        String audienceFilter = blankToNull(audience);
+
+        if (!problems.isEmpty()) {
+            throw ApiException.badRequest("Invalid filter", String.join("; ", problems));
+        }
+
+        EventFilter filter = new EventFilter(fromDate, toDate, categoryFilter, audienceFilter, formatFilter);
+
+        // Get this page of events, and the total count across all pages (with the same filter).
+        List<Event> items = eventRepository.findPage(
+                filter, pageSize, PagedResponse.offset(page, pageSize)); // limit = pageSize, offset = rows to skip
+        long total = eventRepository.count(filter);
+
+        // <> = "Java, figure out the type yourself" (here: Event)
+        return new PagedResponse<>(items, page, pageSize, total);
+    }
+
+    /** GET /events/{id}: one event, or 404 NOT_FOUND if there's no event with that id. */
+    public Event getEvent(long id) {
+        // findById gives back an Optional: either the event, or empty.
+        // orElseThrow = "give me the event, or if it's empty, throw this instead".
+        // () -> ... is a lambda: a tiny function that only runs if the event is missing.
+        return eventRepository.findById(id)
+                .orElseThrow(() -> ApiException.notFound("Event " + id + " not found"));
+    }
+
+    /** An optional date filter: null/blank -> null (no filter); otherwise it must be YYYY-MM-DD. */
+    private LocalDate optionalDate(String value, String field, List<String> problems) {
+        if (value == null || value.isBlank()) {
+            return null;                              // not in the URL = don't filter on it
+        }
+        try {
+            return LocalDate.parse(value.trim());     // expects YYYY-MM-DD
+        } catch (DateTimeParseException e) {
+            problems.add(field + ": must be a real date in YYYY-MM-DD format");
+            return null;
+        }
+    }
+
+    /** An optional dropdown filter: null/blank -> null (no filter); otherwise it must be an allowed value. */
+    private String optionalOneOf(String value, String field, List<String> allowed, List<String> problems) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (!allowed.contains(trimmed)) {             // exact match, same rule as POST /events
+            problems.add(field + ": must be one of " + String.join(", ", allowed));
+        }
+        return trimmed;
+    }
+
     private String requiredText(String value, String field, int maxLength, List<String> problems) {
         if (value == null || value.isBlank()) {       // isBlank() = empty or only spaces
             problems.add(field + ": required");
