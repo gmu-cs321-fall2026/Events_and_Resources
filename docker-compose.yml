@@ -1,0 +1,60 @@
+# =====================================================================
+# docker-compose.yml: runs our whole subsystem with ONE command:
+#
+#   docker compose up --build
+#
+# It starts two containers that can talk to each other:
+#   db   PostgreSQL 17 (our database)
+#   app  our Dockerfile's image (Spring Boot API + React page)
+#
+# Open http://localhost:8080 when the log says "Started EventsResourcesApplication".
+# Stop with Ctrl+C. Wipe the database and start fresh with:
+#   docker compose down -v
+# =====================================================================
+
+services:
+
+  # -------------------------------------------------------------------
+  # The database
+  # -------------------------------------------------------------------
+  db:
+    image: postgres:17                  # same version as our laptops and CI
+    environment:
+      POSTGRES_PASSWORD: dev            # matches DB_PASSWORD below
+      POSTGRES_DB: events               # creates a database named "events"
+    volumes:
+      # Keeps the data when the container stops (named volume "db-data").
+      # "docker compose down -v" deletes it, which is how you reset after
+      # a schema.sql change.
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # Compose asks "is Postgres ready yet?" every 5 seconds, so the app
+      # doesn't start before the database accepts connections.
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No "ports" here on purpose: only the app needs the database, and
+    # inside compose it reaches it by the name "db". This also avoids a
+    # clash with a Postgres you may already run on your laptop's 5432.
+
+  # -------------------------------------------------------------------
+  # Our service: Spring Boot API + React frontend
+  # -------------------------------------------------------------------
+  app:
+    build: .                            # build the Dockerfile in this folder
+    ports:
+      - "8080:8080"                     # your laptop's 8080 -> the container's 8080
+    environment:
+      # "db" is the service name above; compose turns it into the
+      # database container's address.
+      DB_URL: jdbc:postgresql://db:5432/events
+      DB_USER: postgres
+      DB_PASSWORD: dev
+    depends_on:
+      db:
+        condition: service_healthy      # wait for the healthcheck to pass
+
+# Named volumes used above.
+volumes:
+  db-data:
