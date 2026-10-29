@@ -4,9 +4,8 @@
 //
 // Every function here is async, so it returns a Promise.
 // Pages use them with `await getEvents()` or `getEvents().then(...)`.
-
 // "/api" is caught by the proxy in vite.config.js and sent to Spring Boot.
-const BASE_URL = "/api";
+const BASE_URL = import.meta.env.PROD ? "" : "/api";
 //// Added for registration (Yasmin) LINE 20
 // LOGIN TOKEN
 // The backend needs "Authorization: Bearer <token>" to know who you are (else 401).

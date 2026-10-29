@@ -1,0 +1,21 @@
+# .dockerignore: files Docker should NOT copy into the image while building.
+# Like .gitignore, but for "docker build". Skipping these makes builds
+# faster and stops your laptop's files from overriding what the image builds.
+
+# Installed packages and build output: the Dockerfile makes its own.
+# (A Mac's node_modules wouldn't work inside the Linux container anyway.)
+frontend/node_modules
+frontend/dist
+backend/target
+
+# Not needed to run the app.
+.git
+.github
+docs
+*.md
+
+# Editor and OS clutter.
+.idea
+.vscode
+*.iml
+.DS_Store
