@@ -11,7 +11,7 @@ import edu.gmu.cs321.events_resources.common.ApiException;
 // Our record from common/: the {items, page, pageSize, totalCount} list shape
 import edu.gmu.cs321.events_resources.common.PagedResponse;
 
-// Our record from model/: the logged-in user (id + role), attached by AuthInterceptor
+// Our record from model/: the logged-in user (UUID id + list of roles), attached by AuthInterceptor
 import edu.gmu.cs321.events_resources.model.CurrentUser;
 
 // Our record from model/: one event in a student's "my events" list
@@ -25,6 +25,9 @@ import edu.gmu.cs321.events_resources.repository.RegistrationRepository;
 
 // Java's built-in ordered collection
 import java.util.List;
+
+// Java's built-in type for Shared Core's user ids
+import java.util.UUID;
 
 // Spring throws this when an INSERT breaks a UNIQUE rule in the database
 // (here: the same student registering twice for the same event).
@@ -78,6 +81,7 @@ public class RegistrationService {
 
         // Rule 2: already registered?
         // Checked BEFORE taking a seat, so a duplicate click never uses up a seat.
+        // user.id() is now a UUID (Shared Core's user id).
         if (registrations.isRegistered(eventId, user.id())) {
             throw ApiException.conflict("ALREADY_REGISTERED", "You're already registered for this event");
         }
@@ -102,14 +106,15 @@ public class RegistrationService {
      * One page of the events a user registered for.
      * Rule: students can only see THEIR OWN list. Staff and admins can see anyone's.
      *
-     * @param userId    whose list is being asked for (from the URL)
+     * @param userId    whose list is being asked for (from the URL, a UUID)
      * @param requester who is asking (from the login token)
      */
-    public PagedResponse<RegisteredEvent> registeredEvents(long userId, CurrentUser requester, int page, int pageSize) {
+    public PagedResponse<RegisteredEvent> registeredEvents(UUID userId, CurrentUser requester, int page, int pageSize) {
         // Permission check -> 403 if a student asks for someone else's list.
-        boolean ownList = requester.id() == userId;
-        boolean staffOrAdmin = requester.isStaff() || CurrentUser.ADMIN.equals(requester.role());
-        if (!ownList && !staffOrAdmin) {
+        // UUIDs are objects, so compare them with .equals() (== would compare memory addresses).
+        boolean ownList = requester.id().equals(userId);
+        // isStaff() is true for staff OR admin (see CurrentUser).
+        if (!ownList && !requester.isStaff()) {
             throw ApiException.forbidden("You can only view your own registered events");
         }
 

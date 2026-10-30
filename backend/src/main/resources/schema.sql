@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS event_audiences (
 CREATE TABLE IF NOT EXISTS registrations (
     id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     event_id   BIGINT    NOT NULL REFERENCES events(id) ON DELETE CASCADE, -- must be a real event; deleting the event deletes its registrations
-    user_id    BIGINT    NOT NULL,            -- the user's id from Shared Core (their table, not ours)
+    user_id    UUID    NOT NULL,            -- the user's id from Shared Core (their table, not ours)
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     UNIQUE (event_id, user_id)                -- the same student can't register twice for one event
 );
