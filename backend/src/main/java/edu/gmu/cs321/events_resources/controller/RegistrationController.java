@@ -5,7 +5,9 @@ package edu.gmu.cs321.events_resources.controller;
 // IMPORTS: tell Java where to find each class this file uses.
 // ---------------------------------------------------------------------------
 
-// Our class from common/: we only need its CURRENT_USER constant (the name the user is stored under)
+// Java's built-in type for Shared Core's user ids
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +37,7 @@ import edu.gmu.cs321.events_resources.service.RegistrationService;
  * turned into JSON by ErrorHandler, so there's no error handling here either.
  *
  * ENDPOINTS
- *   POST /events/{id}/register                   register the logged-in user      -> 201
+ *   POST /events/{id}/register                   register the logged-in user         -> 201
  *   GET  /users/{userId}/events/registered       list of events a user signed up for -> 200
  */
 @RestController // Spring creates one of these and sends matching requests to its methods
@@ -52,13 +54,15 @@ public class RegistrationController {
     /**
      * POST /events/{id}/register: register the logged-in user for event {id}.
      *
-     * Success: 201 Created + {"id": 12, "eventId": 3, "userId": 7, "createdAt": "..."}
+     * Success: 201 Created + {"id": 12, "eventId": 3,
+     *                         "userId": "00000000-0000-0000-0000-000000000003", "createdAt": "..."}
      * Errors (from the service): 404 NOT_FOUND, 409 ALREADY_REGISTERED, 409 EVENT_FULL
      * Errors (from AuthInterceptor, before we even get here): 401 no/bad token
      */
-    @PostMapping("/events/{id}/register") // {id} is a placeholder for the event id in the URL
+    @PostMapping("/events/{id}/register") // {id} is a placeholder for the EVENT id in the URL
     public ResponseEntity<Registration> register(
             // Pull {id} out of the URL: "/events/3/register" -> id = 3.
+            // Event ids are still numbers (our own table), so this stays long.
             // If it isn't a number ("/events/abc/register"), ErrorHandler returns 400.
             @PathVariable long id,
             // The user AuthInterceptor attached. It comes from the TOKEN, never from the
@@ -77,11 +81,14 @@ public class RegistrationController {
      * Subsystem 2's calendar.
      *
      * Success: 200 + {"items": [...], "page": 1, "pageSize": 20, "totalCount": 2}
-     * Errors: 403 (a student asking for someone else's list), 400 (bad page/pageSize)
+     * Errors: 403 (a student asking for someone else's list), 400 (bad page/pageSize or bad UUID)
      */
     @GetMapping("/users/{userId}/events/registered")
     public PagedResponse<RegisteredEvent> registeredEvents( // returning the object directly = 200 OK
-            @PathVariable long userId,                         // whose list: the 7 in /users/7/...
+            // whose list: the UUID in /users/00000000-0000-0000-0000-000000000003/...
+            // User ids come from Shared Core, so this is a UUID.
+            // If it isn't a valid UUID, ErrorHandler returns 400.
+            @PathVariable UUID userId,
             @RequestParam(defaultValue = "1") int page,        // page=   (1 if missing)
             @RequestParam(defaultValue = "20") int pageSize,   // pageSize= (20 if missing)
             @RequestAttribute(AuthInterceptor.CURRENT_USER) CurrentUser user) { // who is asking

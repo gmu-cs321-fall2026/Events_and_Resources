@@ -1,18 +1,15 @@
 package edu.gmu.cs321.events_resources.common;
 
-import org.junit.jupiter.api.Test;
-// Static imports = use assertEquals(...) instead of Assertions.assertEquals(...).
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-// Fake HTTP request/response objects from Spring's test library (spring-test).
-// They let us call the interceptor directly, with no server running.
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-// The real classes we're testing.
 import edu.gmu.cs321.events_resources.integration.FakeTokenValidator;
 import edu.gmu.cs321.events_resources.model.CurrentUser;
 
@@ -82,8 +79,8 @@ class AuthInterceptorTest {
 
         // The controller reads the user from this attribute, so check it's the right one.
         CurrentUser user = (CurrentUser) request.getAttribute(AuthInterceptor.CURRENT_USER);
-        assertEquals(7, user.id());
-        assertEquals(CurrentUser.STUDENT, user.role());
+        assertEquals(FakeTokenValidator.STUDENT_ID, user.id());   // Shared Core's jdoe UUID
+        assertEquals(List.of(CurrentUser.STUDENT), user.roles()); // roles is now a list
     }
 
     @Test
@@ -98,5 +95,20 @@ class AuthInterceptorTest {
     @Test
     void staffCanCreateAnEvent() {
         assertTrue(run(request("POST", "/events", "staff-token")));
+    }
+
+    @Test
+    void adminCanCreateAnEvent() {
+        // Shared Core's note for us: admins may create events too.
+        assertTrue(run(request("POST", "/events", "admin-token")));
+    }
+
+    @Test
+    void studentWhoIsAlsoAMentorStillCannotCreateAnEvent() {
+        // student2 has TWO roles: ["student", "mentor"]. Neither one is staff.
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("POST", "/events", "student2-token")));
+
+        assertEquals("FORBIDDEN", error.getCode());
     }
 }

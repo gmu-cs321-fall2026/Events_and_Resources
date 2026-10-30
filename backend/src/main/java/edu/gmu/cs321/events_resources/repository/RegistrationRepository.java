@@ -6,23 +6,15 @@ package edu.gmu.cs321.events_resources.repository;
 // ---------------------------------------------------------------------------
 
 // Our record from model/: one event in a student's "my events" list (built by findEventsForUser)
-import edu.gmu.cs321.events_resources.model.RegisteredEvent;
-
-// Our record from model/: one saved registration (built by insert)
-import edu.gmu.cs321.events_resources.model.Registration;
-
-// Java's built-in ordered collection: findEventsForUser returns a List of events
 import java.util.List;
+import java.util.UUID;
 
-// Spring's helper for running SQL. It opens/closes database connections for us
-// and fills in the "?" placeholders safely.
 import org.springframework.jdbc.core.JdbcTemplate;
-
-// "How to turn one SQL result row into a Java object." Used by findEventsForUser.
 import org.springframework.jdbc.core.RowMapper;
-
-// For @Repository: "Spring, create one of these at startup" (and it marks this as the storage layer)
 import org.springframework.stereotype.Repository;
+
+import edu.gmu.cs321.events_resources.model.RegisteredEvent;
+import edu.gmu.cs321.events_resources.model.Registration;
 
 /**
  * RegistrationRepository: the STORAGE layer for registrations.
@@ -59,7 +51,7 @@ public class RegistrationRepository {
     }
 
     /** Is this user already registered for this event? Used for the ALREADY_REGISTERED check. */
-    public boolean isRegistered(long eventId, long userId) {
+    public boolean isRegistered(long eventId, UUID userId) {
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM registrations WHERE event_id = ? AND user_id = ?",
                 Integer.class,
@@ -94,7 +86,7 @@ public class RegistrationRepository {
      * Saves the registration and returns it with its new id and timestamp.
      * The database fills in id (GENERATED AS IDENTITY) and created_at (DEFAULT now()).
      */
-    public Registration insert(long eventId, long userId) {
+    public Registration insert(long eventId, UUID userId) {
         return jdbc.queryForObject(
                 // "RETURNING ..." = PostgreSQL hands back the row it just inserted,
                 // so we get the new id and created_at without a second query.
@@ -105,7 +97,7 @@ public class RegistrationRepository {
                 (rs, rowNum) -> new Registration(
                         rs.getLong("id"),                          // read column "id" as a long
                         rs.getLong("event_id"),
-                        rs.getLong("user_id"),
+                        rs.getObject("user_id", UUID.class),               // PostgreSQL UUID column -> Java UUID
                         rs.getTimestamp("created_at").toLocalDateTime()), // SQL TIMESTAMP -> Java LocalDateTime
                 eventId, userId); // fills in the two "?"
     }
@@ -120,7 +112,7 @@ public class RegistrationRepository {
      * to_char(...) formats the date/time as text so the JSON matches the contract.
      * "AS date" renames a column in the result, so the row mapper can read it by that name.
      */
-    public List<RegisteredEvent> findEventsForUser(long userId, int limit, int offset) {
+    public List<RegisteredEvent> findEventsForUser(UUID userId, int limit, int offset) {
         return jdbc.query(                       // query() = "I expect MANY rows back, give me a List"
                 "SELECT e.id, e.event_title, e.host, "                                   // e. = from the events table
                         + "       to_char(e.event_date, 'YYYY-MM-DD') AS date, "         // 2026-10-22
@@ -137,7 +129,7 @@ public class RegistrationRepository {
     }
 
     /** How many events this user registered for in total. Becomes "totalCount" in the response. */
-    public long countEventsForUser(long userId) {
+    public long countEventsForUser(UUID userId) {
         Long count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM registrations WHERE user_id = ?",
                 Long.class, // "give me the answer as a Long" (totalCount is a long)
