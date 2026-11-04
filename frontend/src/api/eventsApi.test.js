@@ -12,7 +12,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // The functions we're testing. "./" = same folder as this file.
-import { getEvents, registerForEvent } from "./eventsApi";
+import { getEvents, registerForEvent, cancelRegistration, getMyRegistration } from "./eventsApi";
 
 // Helper: builds the fake answer fetch() gives back.
 // Response is built into Node and the browser: it's what a real fetch() returns.

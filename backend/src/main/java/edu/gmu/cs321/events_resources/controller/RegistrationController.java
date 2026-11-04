@@ -83,7 +83,7 @@ public class RegistrationController {
      * Errors (from the service): 404 NOT_FOUND (no such event), 404 NOT_REGISTERED
      * Errors (from AuthInterceptor): 401 no/bad token.
      */
-     @DeleteMapping("/events/{id}/register ")
+     @DeleteMapping("/events/{id}/register")
     public ResponseEntity<Void> cancel(
             @PathVariable long id,
             @RequestAttribute(AuthInterceptor.CURRENT_USER) CurrentUser user) {

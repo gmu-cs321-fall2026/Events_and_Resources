@@ -98,7 +98,8 @@ public class AuthInterceptor implements HandlerInterceptor {
      * Browsers never attach tokens to it, so it must not require one.
     */
     private boolean needsLogin(String method, String path) {
-        boolean readingEvents = method.equals("GET") && path.startsWith("/events");
+        boolean myRegistration = path.matches("/events/\\d+/register/?");
+        boolean readingEvents = method.equals("GET") && path.startsWith("/events") && !myRegistration;
         boolean browserPreCheck = method.equals("OPTIONS");
         return !(readingEvents || browserPreCheck);
     }

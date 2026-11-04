@@ -40,7 +40,7 @@
   color: #c0392b;
 }
 
-register-message-ok {
+.register-message-ok {
   color: var(--text-h);
 }
 

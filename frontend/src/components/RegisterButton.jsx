@@ -1,21 +1,12 @@
 // The "Register" button inside the event pop-up (EventDetailModal).
 //
 // Props:
-//   event        = the event being shown (needs id, capacity, registeredCount)
-//   onRegistered = function the pop-up gives me; I call it after a successful
-//                  registration so it can update the "x / y registered" count
-//   onCancelled  = function the pop-up gives me; I call it after
-//
-// What the student can see:
-//   1. Checking          -> "Checking…" (disabled) while we ask the server "am I registered?"
-//   2. Not registered    -> "Register", or "Event full" (disabled) if there are no seats
-//   3. Registering       -> "Registering…" (disabled, so a double-click can't send twice)
-//   4. Registered        -> "You're registered ✓" + a "Cancel registration" button
-//   5. Confirming        -> "Cancel your spot?" + "Yes, cancel" / "Keep my spot"
-//   6. Cancelling        -> "Cancelling…" (disabled)
+  //   event        = the event being shown (needs id, capacity, registeredCount)
+  //   onRegistered = called after registering, so the pop-up adds 1 to the spot count
+  //   onCancelled  = called after cancelling, so the pop-up takes 1 away
 
-import { useState } from "react";
-import { registerForEvent } from "../api/eventsApi";
+import { useEffect, useState } from "react";
+import { registerForEvent, cancelRegistration, getMyRegistration } from "../api/eventsApi";
 import "./RegisterButton.css";
 
  // ---- State ----
@@ -25,7 +16,7 @@ import "./RegisterButton.css";
   // confirming: true while the "Are you sure?" question is showing
   // message:    a short note under the buttons, e.g. "Your registration was cancelled."
   // isError:    true = show the message in red (and announce it as an alert)
-export default function RegisterButton({ event, onRegistered, onCanceled }) { 
+export default function RegisterButton({ event, onRegistered, onCancelled }) { 
   const [checking, setChecking] = useState(true);
   const [registered, setRegistered] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -113,7 +104,7 @@ export default function RegisterButton({ event, onRegistered, onCanceled }) {
   // ---- What to draw ----
   // checking: Still asking the server. Disabled, so nobody registers twice by accident.
   //
-  // registered + confirming: Before confirming cancellation, show corfirming question 
+  // registered + confirming: Before confirming cancellation, show confirming question 
   // to prevent losing a seat by a slip of the mouse and "Keep my spot" is the easy way back out.
   //
   // registered: Shows the status, can't be clicked. Only registered events can be cancelled.
@@ -137,7 +128,7 @@ export default function RegisterButton({ event, onRegistered, onCanceled }) {
           <button type="button" className="cancel-button" onClick={handleCancel} disabled={busy}>
             {busy ? "Cancelling…" : "Yes, cancel"}
           </button>
-          {}
+        
           <button
             type="button"
             className="keep-button"
@@ -153,11 +144,10 @@ export default function RegisterButton({ event, onRegistered, onCanceled }) {
   } else if (registered) {
     buttons = (
       <>
-        {}
         <button type="button" className="register-button" disabled>
           You're registered ✓
         </button>
-        {}
+      
         <button
           type="button"
           className="cancel-link"
@@ -189,7 +179,7 @@ export default function RegisterButton({ event, onRegistered, onCanceled }) {
   return (
     <div className="register-area">
       {buttons}
-      {}
+
       {message && (
         <p
           className={isError ? "register-message" : "register-message register-message-ok"}
