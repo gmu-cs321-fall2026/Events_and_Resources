@@ -8,6 +8,7 @@ package edu.gmu.cs321.events_resources.repository;
 // Our record from model/: one event in a student's "my events" list (built by findEventsForUser)
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -94,12 +95,64 @@ public class RegistrationRepository {
                         + "RETURNING id, event_id, user_id, created_at",
                 // A "row mapper" written as a lambda: how to turn the returned row into a Registration.
                 // rs = the row ("result set"), rowNum = which row it is (we don't need it).
-                (rs, rowNum) -> new Registration(
+                /*(rs, rowNum) -> new Registration(
                         rs.getLong("id"),                          // read column "id" as a long
                         rs.getLong("event_id"),
                         rs.getObject("user_id", UUID.class),               // PostgreSQL UUID column -> Java UUID
-                        rs.getTimestamp("created_at").toLocalDateTime()), // SQL TIMESTAMP -> Java LocalDateTime
+                        rs.getTimestamp("created_at").toLocalDateTime()), // SQL TIMESTAMP -> Java LocalDateTime */
+                REGISTRATION_MAPPER,
                 eventId, userId); // fills in the two "?"
+    }
+
+    /**
+     * CANCEL A REGISTRATION: Deletes this user's registration AND gives the
+     * seat back, in ONE statement.
+     *
+     * HOW THE SQL WORKS
+     *   WITH removed AS ( DELETE ... RETURNING event_id )
+     *       Step 1: delete this user's row from registrations. "RETURNING event_id" hands
+     *       back the event id of the row it deleted, as a tiny temporary table named
+     *       "removed". If the user wasn't registered, nothing is deleted and "removed" is empty.
+     *       ("WITH name AS (...)" is called a CTE: a named, temporary result we can use below.)
+     *   UPDATE events ... WHERE id IN (SELECT event_id FROM removed)
+     *       Step 2: subtract 1 from registered_count, but ONLY for the event that step 1
+     *       really deleted a row for. If "removed" is empty, no event matches, so nothing changes.
+     *
+     * update() returns how many EVENTS rows changed:
+     *   1 -> the registration existed: it's gone and the seat is free again
+     *   0 -> the user wasn't registered: nothing changed
+     *
+     * WHY ONE STATEMENT: the delete and the -1 always happen
+     * together. If a student double-clicks "Cancel", the second request finds nothing to
+     * delete and returns 0, so the count can never go down twice for one registration.
+     */
+    public boolean cancel(long eventId, UUID userId) {
+        int rowsChanged = jdbc.update(
+                "WITH removed AS ("
+                        + "    DELETE FROM registrations WHERE event_id = ? AND user_id = ? "
+                        + "    RETURNING event_id"
+                        + ") "
+                        + "UPDATE events SET registered_count = registered_count - 1 "
+                        + "WHERE id IN (SELECT event_id FROM removed)",
+                eventId, userId); // fills in the two "?" in order: event_id, then user_id
+        return rowsChanged == 1; // true = cancelled, false = there was nothing to cancel
+    }
+
+    /**
+     * This user's registration for this event, if they have one.
+     * Used by GET /events/{id}/register so the pop-up knows whether to show
+     * "Register" or "Cancel registration" as soon as it opens.
+     *
+     * Optional = a box that holds either one Registration or nothing.
+     * The caller checks it with isPresent() instead of comparing to null.
+     */
+    public Optional<Registration> find(long eventId, UUID userId) {
+        List<Registration> rows = jdbc.query(
+                "SELECT id, event_id, user_id, created_at FROM registrations "
+                        + "WHERE event_id = ? AND user_id = ?",
+                REGISTRATION_MAPPER,
+                eventId, userId);
+        return rows.stream().findFirst();
     }
 
     /**
@@ -136,6 +189,16 @@ public class RegistrationRepository {
                 userId);
         return count == null ? 0 : count; // ternary: if null use 0, otherwise use count
     }
+
+    // Turns one row of the registrations table into a Registration.
+    // Used by insert() and find(). (Moved here from insert() so both share one copy.)
+    // A "row mapper" written as a lambda: rs = the row ("result set"),
+    // rowNum = which row it is (we don't need it).
+    private static final RowMapper<Registration> REGISTRATION_MAPPER = (rs, rowNum) -> new Registration(
+            rs.getLong("id"),                      
+            rs.getLong("event_id"),
+            rs.getObject("user_id", UUID.class),            
+            rs.getTimestamp("created_at").toLocalDateTime());
 
     // Turns one row of the JOIN query above into a RegisteredEvent.
     // "static final" = defined once and reused for every row, every time.

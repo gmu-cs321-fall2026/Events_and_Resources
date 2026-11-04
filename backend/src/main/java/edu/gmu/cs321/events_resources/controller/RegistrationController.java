@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +24,7 @@ import edu.gmu.cs321.events_resources.model.CurrentUser;
 import edu.gmu.cs321.events_resources.model.RegisteredEvent;
 import edu.gmu.cs321.events_resources.model.Registration;
 import edu.gmu.cs321.events_resources.service.RegistrationService;
+import edu.gmu.cs321.events_resources.model.RegistrationStatus;
 
 /**
  * RegistrationController: the API layer for registration.
@@ -73,6 +75,37 @@ public class RegistrationController {
 
         // 201 Created (not the default 200), because we created a new registration.
         return ResponseEntity.status(HttpStatus.CREATED).body(registration);
+    }
+
+    /**
+     * DELETE /events/{id}/register: cancel the logged-in user's registration for event {id}.
+     * Success: 204 No Content, with no body. The seat updated: registeredCount - 1.
+     * Errors (from the service): 404 NOT_FOUND (no such event), 404 NOT_REGISTERED
+     * Errors (from AuthInterceptor): 401 no/bad token.
+     */
+     @DeleteMapping("/events/{id}/register ")
+    public ResponseEntity<Void> cancel(
+            @PathVariable long id,
+            @RequestAttribute(AuthInterceptor.CURRENT_USER) CurrentUser user) {
+
+        service.cancel(id, user);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * GET /events/{id}/register: is the logged-in user registered for event {id}?
+     * The event pop-up calls this when it opens, to pick "Register" or "Cancel registration".
+     *
+     * Success: 200 + {"eventId": 3, "registered": true, "registeredAt": "2026-10-30T17:05:12"}
+     *          (or "registered": false, "registeredAt": null)
+     * Errors: 404 NOT_FOUND (no such event), 401 no/bad token
+     */
+    @GetMapping("/events/{id}/register")
+    public RegistrationStatus status(
+            @PathVariable long id,
+            @RequestAttribute(AuthInterceptor.CURRENT_USER) CurrentUser user) {
+
+        return service.status(id, user);
     }
 
     /**

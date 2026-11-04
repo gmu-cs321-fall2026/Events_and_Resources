@@ -113,3 +113,26 @@ export async function registerForEvent(eventId) {
 
   return request(`/events/${encodeURIComponent(eventId)}/register`, { method: "POST" });
 }
+
+// This will send DELETE /events/{id}/register -> cancels the logged-in user's registration.
+// The server answers 204 No Content (an empty body) -> returns null
+// The event's registeredCount goes down by 1 on the server.
+// Throws with error.code:
+//   "NOT_REGISTERED" (404) you weren't registered (e.g. you already cancelled in another tab)
+//   "NOT_FOUND"      (404) the event doesn't exist
+//   "UNAUTHORIZED"   (401) not logged in
+export async function cancelRegistration(eventId) {
+  if (USE_MOCK) return mock.cancelRegistration(eventId);
+
+  return request(`/events/${encodeURIComponent(eventId)}/register`, { method: "DELETE" });
+}
+
+// GET /events/{id}/register -> "am I registered for this event?"
+// Returns { eventId, registered: true/false, registeredAt: "2026-10-30T17:05:12" or null }.
+// The pop-up calls this when it opens, so it can show "Register" or "Cancel registration".
+// Throws with error.code "NOT_FOUND" (404) or "UNAUTHORIZED" (401).
+export async function getMyRegistration(eventId) {
+  if (USE_MOCK) return mock.getMyRegistration(eventId);
+
+  return request(`/events/${encodeURIComponent(eventId)}/register`);
+}

@@ -28,8 +28,8 @@ import jakarta.servlet.http.HttpServletResponse;
  *   GET  /events, GET /events/{id}           public, no token needed
  *   POST /events/{id}/register               any logged-in user
  *   GET  /users/{userId}/events/registered   any logged-in user (the service checks it's YOUR list)
- *   POST /events                             staff only
- *   PUT / DELETE /events/{id}                staff only (planned for Sprint 3)
+ *   POST /events                             staff/admin only
+ *   PUT / DELETE /events/{id}                staff/admin only
  */
 @Component // Spring creates one of these; WebConfig asks for it and plugs it in
 public class AuthInterceptor implements HandlerInterceptor {
@@ -58,20 +58,16 @@ public class AuthInterceptor implements HandlerInterceptor {
         String method = request.getMethod();   // "GET", "POST", ...
         String path = request.getRequestURI(); // "/events/5/register" (no "?page=1" part)
 
-        // Public URL? Let it through without checking anything.
         if (!needsLogin(method, path)) {
             return true;
         }
 
-        // ---- 1. WHO are you? ----
         CurrentUser user = authenticate(request);
 
-        // ---- 2. Are you ALLOWED? ----
         if (needsStaff(method, path) && !user.isStaff()) {
-            throw ApiException.forbidden("Only Career Services staff can do this");
+            throw ApiException.forbidden("Only Career Services staff or admin can do this");
         }
 
-        // Passed both checks: hand the user to the controller.
         request.setAttribute(CURRENT_USER, user);
         return true;
     }
@@ -97,20 +93,22 @@ public class AuthInterceptor implements HandlerInterceptor {
         return user;
     }
 
-    /** Does this request need ANY logged-in user? Everything except reading events does. */
+    /** Does this request need ANY logged-in user? Everything except reading events does.
+     * OPTIONS = a browser asking "what am I allowed to send?" before the real request.
+     * Browsers never attach tokens to it, so it must not require one.
+    */
     private boolean needsLogin(String method, String path) {
         boolean readingEvents = method.equals("GET") && path.startsWith("/events");
-        // OPTIONS = a browser asking "what am I allowed to send?" before the real request.
-        // Browsers never attach tokens to it, so it must not require one.
         boolean browserPreCheck = method.equals("OPTIONS");
         return !(readingEvents || browserPreCheck);
     }
 
-    /** Does this request need a STAFF user? Creating, editing, or deleting events. */
+    /** Does this request need a staff/admin user? Creating, editing, or deleting events.
+     * .matches() checks the WHOLE path against a pattern ("regular expression"):
+     * /events/?        -> "/events" or "/events/"
+     * /events/\\d+/?   -> "/events/" + one or more digits, e.g. "/events/12
+     */
     private boolean needsStaff(String method, String path) {
-        // .matches() checks the WHOLE path against a pattern ("regular expression"):
-        //   /events/?        -> "/events" or "/events/"
-        //   /events/\\d+/?   -> "/events/" + one or more digits, e.g. "/events/12"
         boolean createEvent = method.equals("POST") && path.matches("/events/?");
         boolean changeEvent = (method.equals("PUT") || method.equals("DELETE"))
                 && path.matches("/events/\\d+/?");
