@@ -104,6 +104,11 @@ WORKDIR /app
 # (Spring Boot names it events-resources-0.0.1-SNAPSHOT.jar; the * matches it.)
 COPY --from=backend /app/target/*.jar app.jar
 
+# Login check: "fake" (test tokens) or "shared-core" (real logins), and where Shared Core is.
+# host.docker.internal = "the laptop running Docker" (Shared Core started on its port 8081).
+ENV AUTH_MODE=fake \
+    SHARED_CORE_URL=http://host.docker.internal:8081
+    
 # Database connection. application.properties reads these three values.
 # The defaults point at a database service named "db", which is what
 # docker-compose.yml creates. Override them with -e when running the

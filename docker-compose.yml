@@ -51,6 +51,13 @@ services:
       DB_URL: jdbc:postgresql://db:5432/events
       DB_USER: postgres
       DB_PASSWORD: dev
+      # Login check. ${X:-default} = use X from your terminal if set, otherwise the default.
+      # Real logins:  AUTH_MODE=shared-core docker compose up --build
+      AUTH_MODE: ${AUTH_MODE:-fake}
+      SHARED_CORE_URL: ${SHARED_CORE_URL:-http://host.docker.internal:8081}
+    extra_hosts:
+      # Makes host.docker.internal work on Linux too (Mac and Windows already have it).
+      - "host.docker.internal:host-gateway"
     depends_on:
       db:
         condition: service_healthy      # wait for the healthcheck to pass
