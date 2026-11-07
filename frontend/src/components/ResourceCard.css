@@ -1,0 +1,146 @@
+/**
+ * ResourceCard.css: one resource card.
+ * Top row (type + industry), title, description, majors, then "Shared by" + Open link.
+ */
+
+.resource-card {
+  background: #fff;
+  border: 1px solid #e4e1d6;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.resource-card:hover {
+  box-shadow: 0 8px 24px rgba(24, 35, 29, 0.08);
+  transform: translateY(-2px);
+}
+
+.resource-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.resource-card__type {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0b5d3b;
+}
+
+.resource-card__industry {
+  font-size: 12px;
+  font-weight: 500;
+  color: #3e4842;
+  background: #f1eee4;
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.resource-card__title {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.resource-card__desc {
+  margin: 0;
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #4a5650;
+}
+
+.resource-card__majors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.resource-card__majors li {
+  font-size: 12px;
+  color: #0b5d3b;
+  border: 1px solid #cfe0d6;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.resource-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #efece3;
+}
+
+.resource-card__shared {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.resource-card__shared > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.resource-card__label {
+  font-size: 12px;
+  color: #5c665f;
+}
+
+.resource-card__by {
+  font-size: 14px;
+  font-weight: 600;
+  color: #18231d;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.avatar--staff {
+  background: #0b5d3b;
+  color: #fff;
+}
+
+.avatar--student {
+  background: #fbf3d6;
+  color: #5a4500;
+}
+
+.resource-card__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0b5d3b;
+  text-decoration: none;
+}
+
+.resource-card__open:hover {
+  text-decoration: underline;
+}
