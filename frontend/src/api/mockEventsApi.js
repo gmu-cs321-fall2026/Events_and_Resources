@@ -16,7 +16,7 @@ function saveAll(events) {
 
 // Earliest first, same as the contract: by date, then time.
 //"YYY-MM-DD" strings sort, and from/to filter
-export async function getEvents({ page = 1, pageSize = 20 } = {}) {
+export async function getEvents({ page = 1, pageSize = 20, from, to } = {}) {
   const all = loadAll()
     .filter((e) => (!from || e.date >= from) && (!to || e.date <= to))
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)

@@ -73,11 +73,9 @@ export default function EventDetailModal({ eventId, onClose }) {
   } else {
     content = (
       <>
-        {}
         <span className="event-detail-tag">{event.category}</span>
         <h2 id="event-detail-title">{event.eventTitle}</h2>
 
-        {}
         <dl className="event-detail-fields">
           <dt>Host</dt>
           <dd>{event.host}</dd>
@@ -91,7 +89,6 @@ export default function EventDetailModal({ eventId, onClose }) {
           <dt>Location</dt>
           <dd>{event.location}</dd>
 
-          {}
           {event.format && (
             <>
               <dt>Format</dt>

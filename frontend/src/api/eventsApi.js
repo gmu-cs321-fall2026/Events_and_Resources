@@ -66,7 +66,7 @@ async function request(path, options = {}) {
 //const STORAGE_KEY = "careerEvents";
 
 //GET /events -> { items: [Event, ...], page, pageSize, totalCount }
-export async function getEvents( { page = 1, pageSize = 20 } = {}) {
+export async function getEvents( { page = 1, pageSize = 20, ...filters } = {}) {
     if (USE_MOCK) return mock.getEvents({ page, pageSize });
 
     //const events = localStorage.getItem(STORAGE_KEY);

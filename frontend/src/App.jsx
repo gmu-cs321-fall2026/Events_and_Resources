@@ -1,6 +1,7 @@
 import { useState } from "react";
 import CreateEventPage from "./pages/CreateEventPage";
 import EventsPage from "./pages/EventsPage";
+import CalendarPage from "./pages/CalendarPage";
 
 function App() {
 	// A counter that goes up every time an event is created.
