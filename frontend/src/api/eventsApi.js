@@ -73,10 +73,31 @@ export async function getEvents( { page = 1, pageSize = 20 } = {}) {
 
     // URLSearchParams builds "page=1&pageSize=20" safely for us.
     const params = new URLSearchParams({ page, pageSize });
+    for (const [name, value] of Object.entries(filters)) {
+      if (value != undefined && value != null && value != "")
+        params.set(name, value);
+    }
     return request(`/events?${params}`);
 
     //if (events) return JSON.parse(events);
 }
+
+// Every event between two dates (both included), for the calendar.
+// The backend sends at most 50 events per page, and a busy month
+// could have more, so we keep asking for the next page until we have them all.
+// Returns a plain array of Events.
+export async function getEventsInRange(from, to) {
+  const PAGE_SIZE = 50; 
+  const all = [];
+  let page = 1;
+  while (true) {
+    const data = await getEvents({ page, pageSize: PAGE_SIZE, from, to });
+    all.push(...data.items);
+    if (all.length >= data.totalCount || data.items.length === 0) return all;
+    page += 1;
+  }
+}
+
 
 //POST /events -> the saved events, now with an id
 export function createEvent(event) {

@@ -14,10 +14,12 @@ function saveAll(events) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
 }
 
+// Earliest first, same as the contract: by date, then time.
+//"YYY-MM-DD" strings sort, and from/to filter
 export async function getEvents({ page = 1, pageSize = 20 } = {}) {
-  // Earliest first, same as the contract: by date, then time.
-  const all = loadAll().sort((a, b) =>
-    (a.date + a.time).localeCompare(b.date + b.time)
+  const all = loadAll()
+    .filter((e) => (!from || e.date >= from) && (!to || e.date <= to))
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)
   );
   const start = (page - 1) * pageSize;
   return {
@@ -101,7 +103,6 @@ export async function getMyRegistration(eventId) {
 
   const registeredIds = JSON.parse(localStorage.getItem(REGISTERED_KEY) || "[]");
   const registered = registeredIds.includes(event.id);
-  // The mock doesn't remember WHEN you registered, so registeredAt is always null here.
   return { eventId: event.id, registered, registeredAt: null };
 }
 
