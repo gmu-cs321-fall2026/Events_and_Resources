@@ -134,3 +134,33 @@ jobs:
       # image here catches a broken Dockerfile before it reaches main.
       - name: Docker - build image
         run: docker build -t events-resources .
+
+
+      # ---------------------------------------------------------------
+      # TESTS INSIDE OUR CONTAINER (Sprint 4 milestone)
+      # The steps above test on GitHub's runner. These two run the SAME
+      # tests inside our Docker image, so we know the code passes in the
+      # exact environment we ship.
+      # ---------------------------------------------------------------
+
+      # Build ONLY up to the Dockerfile's stage named "backend"
+      # (--target backend). That stage still has Maven, the source code
+      # and the test files; the final image has none of them.
+      - name: Docker - backend tests inside the container
+        run: |
+          docker build --target backend -t events-resources-backend-test .
+          docker run --rm --network host \
+            -e DB_URL=jdbc:postgresql://localhost:5432/events \
+            -e DB_USER=postgres \
+            -e DB_PASSWORD=dev \
+            events-resources-backend-test ./mvnw -B verify
+        # --network host = the container shares the runner's network, so
+        # "localhost:5432" reaches the Postgres service at the top of this file.
+        # --rm = delete the container when the tests finish.
+
+      # Same idea for the frontend: stage "frontend" has Node, npm and
+      # our installed packages, so Vitest can run inside it.
+      - name: Docker - frontend tests inside the container
+        run: |
+          docker build --target frontend -t events-resources-frontend-test .
+          docker run --rm events-resources-frontend-test npm test
