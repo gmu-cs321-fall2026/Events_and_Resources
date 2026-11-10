@@ -1,3 +1,4 @@
+import ResourcesPage from "./pages/ResourcesPage";
 import { useState } from "react";
 import CreateEventPage from "./pages/CreateEventPage";
 import EventsPage from "./pages/EventsPage";
@@ -9,6 +10,7 @@ function App() {
 	
 	return (
 		<div>
+			<ResourcesPage />
 			<h1>Career Events & Resources</h1>
 			<p>Welcome to our Career Events page!</p>
 			<CreateEventPage onCreated={() => setRefreshKey((n) => n + 1)} />

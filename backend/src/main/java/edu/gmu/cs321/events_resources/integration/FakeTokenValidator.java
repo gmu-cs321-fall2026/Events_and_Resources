@@ -3,9 +3,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import edu.gmu.cs321.events_resources.model.CurrentUser; // Our record from model aka logged-in user (UUID id + list of roles)
+import edu.gmu.cs321.events_resources.model.CurrentUser;
 
 
 /**
@@ -22,16 +23,17 @@ import edu.gmu.cs321.events_resources.model.CurrentUser; // Our record from mode
  *     any other token                                     -> null (invalid -> 401)
  *
  * ========================================================================
- * NEXT STEP (S4-01): SharedCoreTokenValidator, the real one
- *   It will live in this same folder and also implement TokenValidator.
- *   An AUTH_MODE setting will choose which one Spring uses:
+ *    * WHICH VALIDATOR RUNS: the AUTH_MODE setting (application.properties) picks one:
  *       AUTH_MODE=fake         -> this class (default; tests and CI use it)
- *       AUTH_MODE=shared-core  -> the real one, which calls Shared Core
- *   Only one is active at a time, so Spring never finds two and gets confused.
- *   This class stays in the project for TESTING.
+ *       AUTH_MODE=shared-core  -> SharedCoreTokenValidator, which calls Shared Core
+ *    @ConditionalOnProperty creates this class only in fake mode
+ *   (matchIfMissing = true: also when AUTH_MODE isn't set at all).
  * ========================================================================
  */
 @Component // tells Spring: "create one of these and give it to anyone who asks for a TokenValidator"
+
+@ConditionalOnProperty(name = "auth.mode", havingValue = "fake", matchIfMissing = true)
+
 public class FakeTokenValidator implements TokenValidator { // "implements" = "I keep the TokenValidator promise"
 
     // Shared Core's seed user ids, so fake data matches real logins later.

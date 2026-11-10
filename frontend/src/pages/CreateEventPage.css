@@ -1,46 +1,135 @@
+/**
+ * CreateEventPage.css: the Create Event form, styled to match the Resources page
+ * (white card, green and gold, Space Grotesk headings, Inter text).
+ *
+ * Everything is scoped under .create-event so it can't change other pages.
+ * color-scheme: light keeps the form light even when the computer is in dark mode.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap");
+
 .create-event {
-  max-width: 480px;
+  --green: #0b5d3b;
+  --green-dark: #073d27;
+  --gold: #f2b705;
+  --ink: #18231d;
+  --line: #d9d5c8;
+
+  color-scheme: light;
+  max-width: 560px;
   margin: 40px auto;
-  font-family: sans-serif;
-  text-align: left; /* undo the team's centered text, only on this page */
+  padding: 32px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #e4e1d6;
+  border-radius: 16px;
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--ink);
+  text-align: left;
 }
 
+.create-event h1 {
+  margin: 0 0 24px;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/**
+ * The form: one column of fields with even spacing.
+ * Each label holds its text and its input, stacked.
+ */
 .create-event form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .create-event label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-weight: bold;
+  gap: 6px;
   flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #3e4842;
 }
 
+/**
+ * Inputs and dropdowns: white boxes, rounded, 44px tall so they're easy to tap.
+ * :focus shows a gold ring so you can see which field you're typing in.
+ */
 .create-event input,
 .create-event select {
-  padding: 8px;
-  font-size: 1rem;
-  font-weight: normal;
+  min-height: 44px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: 400 16px Inter, system-ui, sans-serif;
 }
 
-/* puts Date and Time next to each other */
+.create-event input::placeholder {
+  color: #8a918c;
+}
+
+.create-event input:focus,
+.create-event select:focus {
+  outline: 3px solid var(--gold);
+  outline-offset: 1px;
+  border-color: var(--green);
+}
+
+/**
+ * Date and Time side by side. flex-wrap lets them stack on a phone.
+ */
 .create-event .row {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
 }
 
-.create-event button {
-  padding: 10px;
-  font-size: 1rem;
-  cursor: pointer;
-  background: #006633; /* GMU green */
-  color: white;
-  border: none;
-  border-radius: 4px;
+.create-event .row label {
+  min-width: 180px;
 }
 
-.create-event .success { color: green; }
-.create-event .error { color: red; }
+/**
+ * Submit button: full-width green, darker green on hover.
+ */
+.create-event button {
+  min-height: 48px;
+  margin-top: 6px;
+  border: none;
+  border-radius: 10px;
+  background: var(--green);
+  color: #fff;
+  font: 600 16px Inter, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.create-event button:hover {
+  background: var(--green-dark);
+}
+
+/**
+ * The message under the form after Submit: green box for success, red box for errors.
+ */
+.create-event .success,
+.create-event .error {
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.create-event .success {
+  background: #e7f3ec;
+  color: #0b5d3b;
+}
+
+.create-event .error {
+  background: #fdecec;
+  color: #9b1c1c;
+}
