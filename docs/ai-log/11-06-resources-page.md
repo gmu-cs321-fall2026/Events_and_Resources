@@ -1,10 +1,10 @@
-# AI Log: MASON-12 Browse resources directory (frontend)
+# AI Log: MASON-12 Browse resources directory (frontend) and Github workflow ci.yml testing
 
 **AI tool:** Claude
 **Date:** 11-06
 
 ## Asked
-Asked for a nice-looking Resources landing page: search by keyword and by major, cards that show who shared each resource, plus spots for teammates' parts (calendar, jobs, share form, navigation) without editing their files.
+Asked for a nice-looking Resources landing page: search by keyword and by major, cards that show who shared each resource, plus spots for teammates' parts (calendar, jobs, share form, navigation) without editing their files. I also ask for help with the ci format.
 
 ## Produced
 - Design mockup first (canvas), then the React page built from it.
