@@ -14,10 +14,12 @@ function saveAll(events) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
 }
 
-export async function getEvents({ page = 1, pageSize = 20 } = {}) {
-  // Earliest first, same as the contract: by date, then time.
-  const all = loadAll().sort((a, b) =>
-    (a.date + a.time).localeCompare(b.date + b.time)
+// Earliest first, same as the contract: by date, then time.
+//"YYY-MM-DD" strings sort, and from/to filter
+export async function getEvents({ page = 1, pageSize = 20, from, to } = {}) {
+  const all = loadAll()
+    .filter((e) => (!from || e.date >= from) && (!to || e.date <= to))
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)
   );
   const start = (page - 1) * pageSize;
   return {
@@ -73,6 +75,37 @@ export async function registerForEvent(eventId) {
 
   return { id: Date.now(), eventId: event.id, userId: MOCK_USER_ID, createdAt: new Date().toISOString() };
 }
+
+// Pretend cancel, mirroring DELETE /events/{id}/register: same error codes as the server.
+export async function cancelRegistration(eventId) {
+  const all = loadAll();
+  const event = all.find((e) => String(e.id) === String(eventId));
+  if (!event) throw mockError(404, "NOT_FOUND", `Event ${eventId} not found`);
+
+  const registeredIds = JSON.parse(localStorage.getItem(REGISTERED_KEY) || "[]");
+  if (!registeredIds.includes(event.id)) {
+    throw mockError(404, "NOT_REGISTERED", "You aren't registered for this event");
+  }
+
+  // Give the seat back. Math.max(0, ...) = never go below 0, like the database's CHECK rule.
+  event.registeredCount = Math.max(0, (event.registeredCount ?? 0) - 1);
+  saveAll(all);
+  // filter() keeps every id EXCEPT this event's, i.e. removes it from "my registrations".
+  localStorage.setItem(REGISTERED_KEY, JSON.stringify(registeredIds.filter((id) => id !== event.id)));
+
+  return null; // the real server sends 204 No Content (no body)
+}
+
+// Pretend status check, mirroring GET /events/{id}/register.
+export async function getMyRegistration(eventId) {
+  const event = loadAll().find((e) => String(e.id) === String(eventId));
+  if (!event) throw mockError(404, "NOT_FOUND", `Event ${eventId} not found`);
+
+  const registeredIds = JSON.parse(localStorage.getItem(REGISTERED_KEY) || "[]");
+  const registered = registeredIds.includes(event.id);
+  return { eventId: event.id, registered, registeredAt: null };
+}
+
 export async function createEvent(event) {
   const all = loadAll();
   const saved = { ...event, id: all.length + 1 };

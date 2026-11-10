@@ -12,7 +12,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // The functions we're testing. "./" = same folder as this file.
-import { getEvents, registerForEvent } from "./eventsApi";
+import { getEvents, registerForEvent, cancelRegistration, getMyRegistration } from "./eventsApi";
 
 // Helper: builds the fake answer fetch() gives back.
 // Response is built into Node and the browser: it's what a real fetch() returns.
@@ -79,6 +79,42 @@ describe("eventsApi", () => {
     );
 
     await expect(registerForEvent(3)).rejects.toMatchObject({ code: "ALREADY_REGISTERED" });
+  });
+
+  // Cancel registration + "am I registered?" ----
+
+  it("cancelRegistration sends a DELETE with the login token and handles the empty 204 answer", async () => {
+    // 204 No Content = success with an empty body. We build it directly here, because
+    // a 204 Response isn't allowed to have any body at all, not even "".
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+    const result = await cancelRegistration(3);
+
+    expect(result).toBeNull();
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/events/3/register");
+    expect(options.method).toBe("DELETE");
+    expect(options.headers.Authorization).toBe("Bearer student-token");
+  });
+
+  it("cancelling when you weren't registered becomes an error with code NOT_REGISTERED", async () => {
+    fetchMock.mockResolvedValue(
+      fakeResponse(404, { error: "You aren't registered for this event", code: "NOT_REGISTERED", detail: "" })
+    );
+
+    await expect(cancelRegistration(3)).rejects.toMatchObject({ status: 404, code: "NOT_REGISTERED" });
+  });
+
+  it("getMyRegistration sends a GET to the same URL and returns the answer", async () => {
+    const status = { eventId: 3, registered: true, registeredAt: "2026-10-30T17:05:12" };
+    fetchMock.mockResolvedValue(fakeResponse(200, status));
+
+    const result = await getMyRegistration(3);
+
+    expect(result).toEqual(status);
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/events/3/register");
+    expect(options.method).toBeUndefined();
   });
 
   it("shows a friendly message when the backend can't be reached", async () => {

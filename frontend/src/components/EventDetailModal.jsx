@@ -45,7 +45,6 @@ export default function EventDetailModal({ eventId, onClose }) {
       })
       .catch((err) => {
         if (ignore) return;
-        // 404 = the id doesn't exist (e.g. a staff member deleted it).
         setError(err.status === 404 ? "This event no longer exists." : err.message);
       });
     return () => {
@@ -74,11 +73,9 @@ export default function EventDetailModal({ eventId, onClose }) {
   } else {
     content = (
       <>
-        {/* <> </> is a "fragment": groups elements without adding an extra <div> */}
         <span className="event-detail-tag">{event.category}</span>
         <h2 id="event-detail-title">{event.eventTitle}</h2>
 
-        {/* <dl> = a "description list": pairs of <dt> (label) and <dd> (value) */}
         <dl className="event-detail-fields">
           <dt>Host</dt>
           <dd>{event.host}</dd>
@@ -92,7 +89,6 @@ export default function EventDetailModal({ eventId, onClose }) {
           <dt>Location</dt>
           <dd>{event.location}</dd>
 
-          {/* only appear once the backend starts sending them. */}
           {event.format && (
             <>
               <dt>Format</dt>
@@ -121,12 +117,16 @@ export default function EventDetailModal({ eventId, onClose }) {
 
           {event.description && <p>{event.description}</p>}
 
-        {/* Register button. After a successful registration, add 1 to the
-            count shown above so "x / y registered" updates right away. */}
+        {/* Register / cancel buttons. After a successful registration, add 1 to the
+            count shown above so "x / y registered" updates right away.
+            After a cancel, take 1 away. Math.max(0, ...) = never below 0. */}
         <RegisterButton
           event={event}
           onRegistered={() =>
             setEvent((e) => ({ ...e, registeredCount: (e.registeredCount ?? 0) + 1 }))
+          }
+          onCancelled={() =>
+            setEvent((e) => ({ ...e, registeredCount: Math.max(0, (e.registeredCount ?? 0) - 1) }))
           }
         />
       </>

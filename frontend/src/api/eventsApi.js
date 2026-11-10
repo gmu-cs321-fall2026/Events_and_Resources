@@ -66,17 +66,38 @@ async function request(path, options = {}) {
 //const STORAGE_KEY = "careerEvents";
 
 //GET /events -> { items: [Event, ...], page, pageSize, totalCount }
-export async function getEvents( { page = 1, pageSize = 20 } = {}) {
+export async function getEvents( { page = 1, pageSize = 20, ...filters } = {}) {
     if (USE_MOCK) return mock.getEvents({ page, pageSize });
 
     //const events = localStorage.getItem(STORAGE_KEY);
 
     // URLSearchParams builds "page=1&pageSize=20" safely for us.
     const params = new URLSearchParams({ page, pageSize });
+    for (const [name, value] of Object.entries(filters)) {
+      if (value != undefined && value != null && value != "")
+        params.set(name, value);
+    }
     return request(`/events?${params}`);
 
     //if (events) return JSON.parse(events);
 }
+
+// Every event between two dates (both included), for the calendar.
+// The backend sends at most 50 events per page, and a busy month
+// could have more, so we keep asking for the next page until we have them all.
+// Returns a plain array of Events.
+export async function getEventsInRange(from, to) {
+  const PAGE_SIZE = 50; 
+  const all = [];
+  let page = 1;
+  while (true) {
+    const data = await getEvents({ page, pageSize: PAGE_SIZE, from, to });
+    all.push(...data.items);
+    if (all.length >= data.totalCount || data.items.length === 0) return all;
+    page += 1;
+  }
+}
+
 
 //POST /events -> the saved events, now with an id
 export function createEvent(event) {
@@ -112,4 +133,27 @@ export async function registerForEvent(eventId) {
   if (USE_MOCK) return mock.registerForEvent(eventId);
 
   return request(`/events/${encodeURIComponent(eventId)}/register`, { method: "POST" });
+}
+
+// This will send DELETE /events/{id}/register -> cancels the logged-in user's registration.
+// The server answers 204 No Content (an empty body) -> returns null
+// The event's registeredCount goes down by 1 on the server.
+// Throws with error.code:
+//   "NOT_REGISTERED" (404) you weren't registered (e.g. you already cancelled in another tab)
+//   "NOT_FOUND"      (404) the event doesn't exist
+//   "UNAUTHORIZED"   (401) not logged in
+export async function cancelRegistration(eventId) {
+  if (USE_MOCK) return mock.cancelRegistration(eventId);
+
+  return request(`/events/${encodeURIComponent(eventId)}/register`, { method: "DELETE" });
+}
+
+// GET /events/{id}/register -> "am I registered for this event?"
+// Returns { eventId, registered: true/false, registeredAt: "2026-10-30T17:05:12" or null }.
+// The pop-up calls this when it opens, so it can show "Register" or "Cancel registration".
+// Throws with error.code "NOT_FOUND" (404) or "UNAUTHORIZED" (401).
+export async function getMyRegistration(eventId) {
+  if (USE_MOCK) return mock.getMyRegistration(eventId);
+
+  return request(`/events/${encodeURIComponent(eventId)}/register`);
 }

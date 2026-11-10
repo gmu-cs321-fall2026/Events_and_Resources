@@ -1,4 +1,4 @@
-/* The Register button in the event pop-up.
+/* The Register/Cancel button in the event pop-up.
    Uses the team's color variables from index.css, so it follows light/dark mode. */
 
 .register-area {
@@ -38,4 +38,79 @@
 .register-message {
   margin: 8px 0 0;
   color: #c0392b;
+}
+
+.register-message-ok {
+  color: var(--text-h);
+}
+
+/* "Cancel registration": a quiet text-style button under "You're registered ✓",
+   so it's easy to find but doesn't compete with the main button */
+.cancel-link {
+  display: block;
+  margin: 8px auto 0;
+  padding: 4px 8px;
+  font: inherit;
+  color: var(--text);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cancel-link:hover {
+  color: #c0392b;
+}
+
+/* The "Cancel your spot?" box */
+.cancel-confirm {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.cancel-confirm-question {
+  margin: 0 0 10px;
+  color: var(--text-h);
+}
+
+/* The two answer buttons, side by side, sharing the width equally */
+.cancel-confirm-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.cancel-confirm-buttons button {
+  flex: 1;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* "Yes, cancel": red, because it gives up the seat */
+.cancel-button {
+  color: #fff;
+  background: #c0392b;
+  border: 1px solid #c0392b;
+}
+
+/* "Keep my spot": the safe choice, plain outline */
+.keep-button {
+  color: var(--text-h);
+  background: none;
+  border: 1px solid var(--border);
+}
+
+.cancel-confirm-buttons button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Keyboard users see a clear outline on every new button */
+.cancel-link:focus-visible,
+.cancel-confirm-buttons button:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 2px;
 }

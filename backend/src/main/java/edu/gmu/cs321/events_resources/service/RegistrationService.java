@@ -19,20 +19,23 @@ import edu.gmu.cs321.events_resources.model.RegisteredEvent;
 
 // Our record from model/: one saved registration
 import edu.gmu.cs321.events_resources.model.Registration;
-
+import edu.gmu.cs321.events_resources.model.RegistrationStatus;
 // Our class from repository/: all the SQL. The service calls it; it never writes SQL itself.
 import edu.gmu.cs321.events_resources.repository.RegistrationRepository;
 
+import java.time.LocalDateTime;
 // Java's built-in ordered collection
 import java.util.List;
 
 // Java's built-in type for Shared Core's user ids
 import java.util.UUID;
 
+import java.util.Optional;
+
 // Spring throws this when an INSERT breaks a UNIQUE rule in the database
 // (here: the same student registering twice for the same event).
 import org.springframework.dao.DuplicateKeyException;
-
+import org.springframework.http.HttpStatus;
 // For @Service: "Spring, create one of these at startup" (and it marks this as the service layer)
 import org.springframework.stereotype.Service;
 
@@ -100,6 +103,50 @@ public class RegistrationService {
             // Throwing here also undoes its +1 seat (because of @Transactional).
             throw ApiException.conflict("ALREADY_REGISTERED", "You're already registered for this event");
         }
+    }
+
+    /**
+     * Cancels the logged-in user's registration for an event.
+     * The rules, in order:
+     *   1. The event must exist                    -> otherwise 404 NOT_FOUND
+     *   2. The user must be registered for it      -> otherwise 404 NOT_REGISTERED
+     *   3. Delete the registration and free the seat -> the controller returns 204 No Content
+     *
+     * A user can only ever cancel THEIR OWN registration: the user comes from the
+     * login token, and there's no user id in the URL or body to change.
+     *
+     */
+    @Transactional
+    public void cancel(long eventId, CurrentUser user) {
+        if (!registrations.eventExists(eventId)) {
+            throw ApiException.notFound("Event " + eventId + " not found");
+        }
+
+        if (!registrations.cancel(eventId, user.id())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "NOT_REGISTERED",
+                    "You aren't registered for this event", "");
+        }
+    }
+
+    /**
+     * Is the logged-in user registered for this event?
+     * The pop-up calls this when it opens, so it shows the right button straight away.
+     *   1. The event must exist -> otherwise 404 NOT_FOUND
+     *   2. Answer yes/no (and when they registered, if yes)
+     *  find() returns an Optional: a box with the registration in it, or an empty box.
+     * .map(...) runs only if the box has something in it: take its createdAt.
+     * .orElse(null) = if the box was empty, use null.
+     */
+    public RegistrationStatus status(long eventId, CurrentUser user) {
+        if (!registrations.eventExists(eventId)) {
+            throw ApiException.notFound("Event " + eventId + " not found");
+        }
+
+        Optional<Registration> found = registrations.find(eventId, user.id());
+
+        LocalDateTime registeredAt = found.map(Registration::createdAt).orElse(null);
+
+        return new RegistrationStatus(eventId, found.isPresent(), registeredAt);
     }
 
     /**

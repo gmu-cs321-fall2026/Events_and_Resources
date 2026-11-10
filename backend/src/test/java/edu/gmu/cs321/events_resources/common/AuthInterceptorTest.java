@@ -111,4 +111,55 @@ class AuthInterceptorTest {
 
         assertEquals("FORBIDDEN", error.getCode());
     }
+
+    @Test
+    void cancellingWithoutATokenIs401() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("DELETE", "/events/3/register", null)));
+
+        assertEquals(401, error.getStatus().value());
+    }
+
+    @Test
+    void studentCanCancelTheirRegistration() {
+        // DELETE /events/{id}/register is NOT the staff-only DELETE /events/{id},
+        // so a student gets through (the service then checks it's their own spot).
+        MockHttpServletRequest request = request("DELETE", "/events/3/register", "student-token");
+
+        assertTrue(run(request));
+        CurrentUser user = (CurrentUser) request.getAttribute(AuthInterceptor.CURRENT_USER);
+        assertEquals(FakeTokenValidator.STUDENT_ID, user.id());
+    }
+
+    @Test
+    void registrationStatusNeedsALoginEvenThoughItIsAGet() {
+        // Other GETs under /events are public, but this one is about YOUR registration.
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/events/3/register", null)));
+
+        assertEquals("UNAUTHORIZED", error.getCode());
+    }
+
+    @Test
+    void registrationStatusAttachesTheUser() {
+        MockHttpServletRequest request = request("GET", "/events/3/register", "student-token");
+
+        assertTrue(run(request));
+        assertEquals(FakeTokenValidator.STUDENT_ID,
+                ((CurrentUser) request.getAttribute(AuthInterceptor.CURRENT_USER)).id());
+    }
+
+    @Test
+    void eventDetailIsStillPublic() {
+        // Make sure the new rule didn't accidentally lock GET /events/{id}.
+        assertTrue(run(request("GET", "/events/3", null)));
+    }
+
+    @Test
+    void studentDeletingAWholeEventIsStill403() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("DELETE", "/events/3", "student-token")));
+
+        assertEquals("FORBIDDEN", error.getCode());
+    }
 }
