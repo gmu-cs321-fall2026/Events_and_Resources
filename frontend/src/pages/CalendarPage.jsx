@@ -36,7 +36,7 @@ export default function CalendarPage({ refreshKey }) {
   const [view, setView] = useState("month");          // "month" | "week" | "day"
   const [anchor, setAnchor] = useState(() => new Date()); // the day we're looking at; starts at today
   const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  //const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedEventId, setSelectedEventId] = useState(null); // which pop-up is open (null = none)
   // Goes up by 1 when the pop-up closes, to reload the calendar.
@@ -50,27 +50,33 @@ export default function CalendarPage({ refreshKey }) {
   const from = toISODate(start);
   const to = toISODate(end);
 
+  // One string that names "the data we want right now". It changes whenever the range,
+  // refreshKey or reloadKey changes. loadedKey = the request whose answer we have.
+  // We're loading while the two don't match, so there's no setLoading(true) in the effect.
+  const requestKey = `${from}|${to}|${refreshKey}|${reloadKey}`;
+  const [loadedKey, setLoadedKey] = useState(null);
+  const loading = loadedKey !== requestKey;
+
   // Load the events for the days on screen. Re-runs when the range changes,
   // after an event is created (refreshKey), or after the pop-up closes (reloadKey).
   useEffect(() => {
     let ignore = false; // ignore an old answer that arrives after a newer request (same trick as EventsPage)
-    setLoading(true);
     getEventsInRange(from, to)
       .then((items) => {
         if (ignore) return;
         setEvents(items);
         setError(null);
+        setLoadedKey(requestKey);
       })
       .catch((err) => {
-        if (!ignore) setError(err.message);
-      })
-      .finally(() => {
-        if (!ignore) setLoading(false);
+        if (ignore) return;
+        setError(err.message);
+        setLoadedKey(requestKey);
       });
     return () => {
       ignore = true;
     };
-  }, [from, to, refreshKey, reloadKey]);
+  }, [from, to, requestKey]);
 
   // { "2026-11-05": [events...] }, only recalculated when `events` changes.
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
