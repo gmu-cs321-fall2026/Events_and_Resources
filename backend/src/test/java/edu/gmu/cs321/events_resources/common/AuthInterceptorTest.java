@@ -162,4 +162,42 @@ class AuthInterceptorTest {
 
         assertEquals("FORBIDDEN", error.getCode());
     }
+
+    /*
+     * Job postings (MASON-13): anyone can read them, only staff/admin can change them.
+     */
+
+    @Test
+    void listingJobPostingsIsPublic() {
+        assertTrue(run(request("GET", "/opportunities", null)));
+        assertTrue(run(request("GET", "/opportunities/2", null)));
+    }
+
+    @Test
+    void postingAJobWithoutATokenIs401() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("POST", "/opportunities", null)));
+
+        assertEquals("UNAUTHORIZED", error.getCode());
+    }
+
+    @Test
+    void studentPostingEditingOrDeletingAJobIs403() {
+        for (String method : List.of("POST", "PUT", "DELETE")) {
+            String path = method.equals("POST") ? "/opportunities" : "/opportunities/2";
+            ApiException error = assertThrows(ApiException.class,
+                    () -> run(request(method, path, "student-token")));
+
+            assertEquals("FORBIDDEN", error.getCode(), method + " " + path);
+        }
+    }
+
+    @Test
+    void staffAndAdminCanPostEditAndDeleteJobs() {
+        for (String token : List.of("staff-token", "admin-token")) {
+            assertTrue(run(request("POST", "/opportunities", token)));
+            assertTrue(run(request("PUT", "/opportunities/2", token)));
+            assertTrue(run(request("DELETE", "/opportunities/2", token)));
+        }
+    }
 }
