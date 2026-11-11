@@ -1,0 +1,27 @@
+\\## Asked
+
+
+
+Asked Claude to write css style page for the calendar with minmal design. Requirements:
+- Calendar never gets wider than 1100px, even on a huge monitor
+- Include a toolbar to filter Today view, Month/Week/Day view
+
+
+
+
+
+
+
+
+\\## Produced
+
+
+
+A css file style for CalendarPage.jsx to call on
+
+
+\\## Changed or rejected
+
+
+
+Accepted. Run with Line Server Extension on VSCode
