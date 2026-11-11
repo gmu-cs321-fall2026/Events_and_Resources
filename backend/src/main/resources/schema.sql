@@ -100,6 +100,12 @@ CREATE TABLE IF NOT EXISTS opportunity (
 	link		VARCHAR(500) NOT NULL
 );
 
+-- MASON-13 (Post jobs): every posting also needs a description and a type.
+-- ALTER TABLE ... ADD COLUMN IF NOT EXISTS adds them to a database that already has
+-- the table, so nobody has to reset their database for this change.
+ALTER TABLE opportunity ADD COLUMN IF NOT EXISTS description VARCHAR(2000) NOT NULL DEFAULT '';
+ALTER TABLE opportunity ADD COLUMN IF NOT EXISTS job_type VARCHAR(20) NOT NULL DEFAULT 'Internship';
+
 -- ---------------------------------------------------------------------------
 -- Audience_events/resource/opportunity: one row per audience relation.
 -- ---------------------------------------------------------------------------

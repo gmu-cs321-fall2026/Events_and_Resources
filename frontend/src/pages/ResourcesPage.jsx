@@ -12,7 +12,8 @@
  *   onShare       = opens Jean's "submit a resource" form (MASON-7). Without it the
  *                   button is disabled and says "coming soon".
  *   calendarHref  = link to Trang's calendar (MASON-3)
- *   jobsHref      = link to Cindy's jobs page (MASON-13)
+ *   jobsHref      = link to the Jobs page (MASON-13), "#jobs" by default
+ *   jobsReloadKey = changes after staff post/edit/delete a job, so the jobs panel reloads
  *
  * State:
  *   major, type, query = the filters. Changing any one re-runs the useEffect,
@@ -26,7 +27,7 @@ import JobsPanel from "../components/JobsPanel";
 import gmuLogo from "../assets/gmu-logo.png";
 import "./ResourcesPage.css";
 
-export default function ResourcesPage({ onShare, calendarHref = "#", jobsHref = "#" }) {
+export default function ResourcesPage({ onShare, calendarHref = "#", jobsHref = "#jobs", jobsReloadKey = 0 }) {
   const [major, setMajor] = useState("All majors");
   const [type, setType] = useState("All types");
   const [query, setQuery] = useState("");
@@ -157,7 +158,7 @@ export default function ResourcesPage({ onShare, calendarHref = "#", jobsHref = 
 
         <aside className="resources-side">
           <UpcomingEventsPanel major={major} calendarHref={calendarHref} />
-          <JobsPanel jobsHref={jobsHref} />
+          <JobsPanel jobsHref={jobsHref} reloadKey={jobsReloadKey} />
         </aside>
       </div>
     </div>

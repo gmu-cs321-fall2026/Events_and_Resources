@@ -115,3 +115,27 @@ FROM (VALUES
 JOIN events   e ON e.event_title = link.event_title
 JOIN audiences a ON a.name        = link.audience_name
 ON CONFLICT DO NOTHING;
+
+
+-- OPPORTUNITIES (MASON-13): sample job and internship postings.
+-- Same idea as the events above: a row is only added if no posting with that title exists yet.
+INSERT INTO opportunity (title, employer, job_type, description, link, deadline, date_posted)
+SELECT v.title, v.employer, v.job_type, v.description, v.link, v.deadline::date, CURRENT_DATE
+FROM (VALUES
+    ('Software Engineering Intern, Summer 2027', 'Capital One', 'Internship',
+     'Build features for customer-facing apps with a mentor on an agile team. Open to CS and IT majors graduating in 2028 or 2029.',
+     'https://www.capitalonecareers.com/', '2026-12-15'),
+    ('Cyber Analyst Intern', 'Deloitte', 'Internship',
+     'Help clients find and fix security risks. U.S. citizenship required for some projects.',
+     'https://apply.deloitte.com/', '2027-01-10'),
+    ('Associate Software Developer', 'Booz Allen Hamilton', 'Full-time',
+     'Entry-level developer role on government technology projects in McLean, VA. Starts summer 2027.',
+     'https://careers.boozallen.com/', '2027-02-01'),
+    ('IT Help Desk Assistant', 'GMU Information Technology Services', 'On-campus',
+     'Part-time student job answering tech support questions, 10-15 hours a week on the Fairfax campus.',
+     'https://jobs.gmu.edu/', '2026-12-01'),
+    ('Research Assistant, Human-Computer Interaction Lab', 'GMU Department of Computer Science', 'On-campus',
+     'Help run user studies and analyze data for accessibility research. Paid, about 10 hours a week.',
+     'https://cs.gmu.edu/', '2027-01-20')
+) AS v(title, employer, job_type, description, link, deadline)
+WHERE NOT EXISTS (SELECT 1 FROM opportunity o WHERE o.title = v.title);
