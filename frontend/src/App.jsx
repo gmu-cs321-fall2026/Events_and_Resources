@@ -15,11 +15,11 @@ function App() {
 	
 	return (
 		<div>
-			<ResourcesPage />
+			<ResourcesPage calendarHref="#calendar"  />
 			<h1>Career Events & Resources</h1>
 			<p>Welcome to our Career Events page!</p>
 			<CreateEventPage onCreated={() => setRefreshKey((n) => n + 1)} />
-			
+			 <section id="calendar">
 			<div className="events-view-switch" role="group" aria-label="Show events as">
 				<button type="button" aria-pressed={eventsView === "calendar"} onClick={() => setEventsView("calendar")}>
 					Calendar
@@ -34,6 +34,7 @@ function App() {
 			) : (
 				<EventsPage refreshKey={refreshKey} />
 			)}
+			</section>
 		</div>
 	)
 }
