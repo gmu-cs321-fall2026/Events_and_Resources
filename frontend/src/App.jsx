@@ -3,6 +3,7 @@ import { useState } from "react";
 import CreateEventPage from "./pages/CreateEventPage";
 import EventsPage from "./pages/EventsPage";
 import CalendarPage from "./pages/CalendarPage";
+import JobsPage from "./pages/JobsPage";
 
 function App() {
 	// A counter that goes up every time an event is created.
@@ -12,10 +13,12 @@ function App() {
 	// Both read the same GET/events data
 	const [refreshKey, setRefreshKey] = useState(0);
 	const [eventsView, setEventsView] = useState("calendar");
+	/** MASON-13: goes up after staff post, edit or delete a job, so the Resources page's jobs panel reloads. */
+	const [jobsKey, setJobsKey] = useState(0);
 	
 	return (
 		<div>
-			<ResourcesPage />
+			<ResourcesPage jobsReloadKey={jobsKey} />
 			<h1>Career Events & Resources</h1>
 			<p>Welcome to our Career Events page!</p>
 			<CreateEventPage onCreated={() => setRefreshKey((n) => n + 1)} />
@@ -34,6 +37,7 @@ function App() {
 			) : (
 				<EventsPage refreshKey={refreshKey} />
 			)}
+			<JobsPage onChanged={() => setJobsKey((n) => n + 1)} />
 		</div>
 	)
 }
