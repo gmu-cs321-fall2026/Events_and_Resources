@@ -30,6 +30,9 @@ import jakarta.servlet.http.HttpServletResponse;
  *   GET  /users/{userId}/events/registered   any logged-in user (the service checks it's YOUR list)
  *   POST /events                             staff/admin only
  *   PUT / DELETE /events/{id}                staff/admin only
+ *  *   GET  /opportunities, /opportunities/{id} public, no token needed (MASON-13)
+ *   POST /opportunities                      staff/admin only
+ *   PUT / DELETE /opportunities/{id}         staff/admin only
  */
 @Component // Spring creates one of these; WebConfig asks for it and plugs it in
 public class AuthInterceptor implements HandlerInterceptor {
@@ -100,8 +103,9 @@ public class AuthInterceptor implements HandlerInterceptor {
     private boolean needsLogin(String method, String path) {
         boolean myRegistration = path.matches("/events/\\d+/register/?");
         boolean readingEvents = method.equals("GET") && path.startsWith("/events") && !myRegistration;
+        boolean readingJobs = method.equals("GET") && path.startsWith("/opportunities");
         boolean browserPreCheck = method.equals("OPTIONS");
-        return !(readingEvents || browserPreCheck);
+        return !(readingEvents || readingJobs || browserPreCheck);
     }
 
     /** Does this request need a staff/admin user? Creating, editing, or deleting events.
@@ -113,6 +117,9 @@ public class AuthInterceptor implements HandlerInterceptor {
         boolean createEvent = method.equals("POST") && path.matches("/events/?");
         boolean changeEvent = (method.equals("PUT") || method.equals("DELETE"))
                 && path.matches("/events/\\d+/?");
-        return createEvent || changeEvent;
+        boolean createJob = method.equals("POST") && path.matches("/opportunities/?");
+        boolean changeJob = (method.equals("PUT") || method.equals("DELETE"))
+                && path.matches("/opportunities/\\d+/?");
+        return createEvent || changeEvent || createJob || changeJob;
     }
 }

@@ -7,6 +7,7 @@ public record EventFilter(
         String category,   // exactly one of EventService.CATEGORIES, or null
         String audience,   // an audience name from the audiences table, e.g. "CS Majors", or null
         String format      // "In-person" or "Virtual", or null
+        //String q
 )	{
     /** A filter with nothing set: "give me every event". Handy for tests and future callers. */
     public static EventFilter none() {

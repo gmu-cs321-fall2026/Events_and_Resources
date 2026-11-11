@@ -1,0 +1,333 @@
+/**
+ * JobsPage.css (MASON-13): the jobs board, its cards, the staff form and the job pop-up.
+ * Same colors and fonts as the Resources page, kept in the variables below.
+ * The pop-up's frame comes from EventDetailModal.css, so events and jobs look alike.
+ */
+
+.jobs-page,
+.modal.job-modal {
+	--green: #0b5d3b;
+	--green-dark: #073d27;
+	--gold: #f2b705;
+	--ink: #18231d;
+	--muted: #4a5650;
+	--line: #e4e1d6;
+	--paper: #faf8f2;
+	--danger: #9b1c1c;
+
+	font-family: Inter, system-ui, sans-serif;
+	color: var(--ink);
+	text-align: left;
+}
+
+.jobs-page {
+	max-width: 1120px;
+	margin: 0 auto;
+	padding: 40px 24px;
+}
+
+.jobs-page h1,
+.job-modal h2 {
+	font-family: "Space Grotesk", system-ui, sans-serif;
+	color: var(--ink);
+}
+
+/* ---------- header ---------- */
+
+.jobs-page__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.jobs-page__eyebrow {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #8a6a00;
+}
+
+.jobs-page h1 {
+	margin: 4px 0 0;
+	font-size: 30px;
+}
+
+.jobs-page__form {
+	background: #fff;
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	padding: 24px;
+	margin-bottom: 24px;
+}
+
+/* ---------- filters ---------- */
+
+.jobs-page__filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.jobs-search {
+	flex: 1 1 320px;
+}
+
+.jobs-search input {
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 46px;
+	padding: 0 14px;
+	border: 1.5px solid #d9d5c8;
+	border-radius: 10px;
+	background: #fff;
+	font: 400 16px Inter, sans-serif;
+	color: var(--ink);
+}
+
+.jobs-search input:focus {
+	outline: 2px solid var(--gold);
+	outline-offset: 1px;
+}
+
+.job-pill-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.job-pill {
+	min-height: 40px;
+	padding: 0 14px;
+	border-radius: 10px;
+	border: 1.5px solid #d9d5c8;
+	background: #fff;
+	color: #3e4842;
+	font: 500 14px Inter, sans-serif;
+	cursor: pointer;
+}
+
+.job-pill:hover {
+	border-color: var(--green);
+}
+
+.job-pill--on {
+	background: var(--green);
+	border-color: var(--green);
+	color: #fff;
+	font-weight: 600;
+}
+
+.jobs-page__count,
+.jobs-page__empty {
+	color: var(--muted);
+	font-size: 14px;
+}
+
+/* ---------- cards ---------- */
+
+.job-grid {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 14px;
+}
+
+.job-card {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+	padding: 18px;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+	background: #fff;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	cursor: pointer;
+}
+
+.job-card:hover,
+.job-card:focus-visible {
+	border-color: var(--green);
+	box-shadow: 0 4px 14px rgba(11, 93, 59, 0.12);
+}
+
+.job-type {
+	font-size: 12px;
+	font-weight: 600;
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: #edf3ef;
+	color: var(--green-dark);
+}
+
+.job-card__title {
+	font-size: 17px;
+	font-weight: 600;
+}
+
+.job-card__employer {
+	color: var(--muted);
+}
+
+.job-card__deadline {
+	margin-top: auto;
+	font-size: 13px;
+	font-weight: 600;
+	color: #8a3b12;
+}
+
+/* ---------- buttons ---------- */
+
+.job-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	padding: 0 18px;
+	border-radius: 10px;
+	border: 1.5px solid var(--green);
+	background: var(--green);
+	color: #fff;
+	font: 600 15px Inter, sans-serif;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.job-button:hover {
+	background: var(--green-dark);
+}
+
+.job-button:disabled {
+	opacity: 0.6;
+	cursor: wait;
+}
+
+.job-button--plain {
+	background: #fff;
+	color: var(--ink);
+	border-color: #d9d5c8;
+}
+
+.job-button--plain:hover {
+	background: var(--paper);
+}
+
+.job-button--danger {
+	background: var(--danger);
+	border-color: var(--danger);
+}
+
+.job-button--danger:hover {
+	background: #7a1515;
+}
+
+/* ---------- pop-up ---------- */
+
+.modal.job-modal {
+	max-width: 560px;
+	background: #fff;
+}
+
+.job-detail__description {
+	white-space: pre-line;
+	/* keeps the line breaks staff typed */
+	line-height: 1.5;
+}
+
+.job-apply {
+	width: 100%;
+	box-sizing: border-box;
+	margin-top: 8px;
+}
+
+.job-staff-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid var(--line);
+}
+
+/* ---------- form ---------- */
+
+.job-form {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.job-form h2 {
+	margin: 0;
+}
+
+.job-form label {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.job-form input,
+.job-form select,
+.job-form textarea {
+	font: 400 15px Inter, sans-serif;
+	padding: 10px 12px;
+	border: 1.5px solid #d9d5c8;
+	border-radius: 10px;
+	background: #fff;
+	color: var(--ink);
+}
+
+.job-form input:focus,
+.job-form select:focus,
+.job-form textarea:focus {
+	outline: 2px solid var(--gold);
+	outline-offset: 1px;
+}
+
+.job-form__row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.job-form__actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+}
+
+.job-error {
+	color: var(--danger);
+	margin: 0;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+	.job-form__row {
+		grid-template-columns: 1fr;
+	}
+}
