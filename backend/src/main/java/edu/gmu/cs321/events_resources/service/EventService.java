@@ -29,6 +29,9 @@ public class EventService {
 		"Virtual"
 	);
 
+    /** Longest keyword allowed in GET /events?q= (MASON-10). */
+    static final int MAX_KEYWORD_LENGTH = 100;
+
 	private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 	private final EventRepository eventRepository;
 	public EventService(EventRepository eventRepository) {
@@ -96,7 +99,7 @@ public class EventService {
      * An audience name that matches no event isn't an error: you just get an empty list.
      */
     public PagedResponse<Event> listEvents(int page, int pageSize, String from, String to,
-                                           String category, String audience, String format) {
+                                           String category, String audience, String format, String q) {
         // 400 if page/pageSize are out of range (page < 1, or pageSize not 1-50).
         PagedResponse.validate(page, pageSize);
 
@@ -116,12 +119,21 @@ public class EventService {
 
         // Audience: optional free text, matched against the audiences table (ignoring upper/lower case).
         String audienceFilter = blankToNull(audience);
+        
+        /*
+         * Keyword search: optional free text, matched in title, host,
+         * location, audience and category. Capped at 100 characters.
+         */
+        String keyword = blankToNull(q);
+        if (keyword != null && keyword.length() > MAX_KEYWORD_LENGTH) {
+            problems.add("q: must be " + MAX_KEYWORD_LENGTH + " characters or fewer");
+        }
 
         if (!problems.isEmpty()) {
             throw ApiException.badRequest("Invalid filter", String.join("; ", problems));
         }
 
-        EventFilter filter = new EventFilter(fromDate, toDate, categoryFilter, audienceFilter, formatFilter);
+        EventFilter filter = new EventFilter(fromDate, toDate, categoryFilter, audienceFilter, formatFilter, keyword);
 
         // Get this page of events, and the total count across all pages (with the same filter).
         List<Event> items = eventRepository.findPage(
