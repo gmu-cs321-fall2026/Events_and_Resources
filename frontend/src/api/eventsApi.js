@@ -21,7 +21,7 @@ import * as mock from "./mockEventsApi";
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
 // Helper used by every function: send a request, then either return the JSON body or throw an error message
-async function request(path, options = {}) {
+export async function request(path, options = {}) {
   let response;
   try {
     // fetch() only fails here if the request never got an answer at all.
