@@ -177,6 +177,11 @@ public class EventRepository {
 					+ "WHERE ea.event_id = events.id AND lower(a.name) = lower(?))");
 			params.add(f.audience());
 		}
+		if (f.q() != null) {
+			conditions.add(
+					"strpos(lower(concat_ws(' ', event_title, host, location, audience, category)), lower(?)) > 0");
+			params.add(f.q());
+		}
 
 		// No filters at all -> no WHERE clause, so every event matches.
 		// Otherwise glue the conditions together with AND: every one must be true.
