@@ -12,6 +12,7 @@
 // useMemo   = remember a calculated value until its inputs change (skips redoing work).
 import { useEffect, useMemo, useState } from "react";
 import { getEventsInRange } from "../api/eventsApi";
+import { getMyRegisteredEventsInRange } from "../api/myEventsApi";
 import EventDetailModal from "../components/EventDetailModal";
 import {
   VIEWS,
@@ -29,7 +30,10 @@ import "./CalendarPage.css";
 
 // How many events fit in a month cell before we show "+N more".
 const MAX_PER_MONTH_CELL = 3;
-
+const SHOW_OPTIONS = [
+  { value: "all", label: "All events" },
+  { value: "mine", label: "My events" },
+];
 // Props: refreshKey = number from App.jsx that changes after an event is created,
 // so a new event shows up on the calendar without refreshing the browser.
 export default function CalendarPage({ refreshKey }) {
@@ -42,7 +46,7 @@ export default function CalendarPage({ refreshKey }) {
   // Goes up by 1 when the pop-up closes, to reload the calendar.
   // That way the "x / y registered" counts are fresh after someone registers.
   const [reloadKey, setReloadKey] = useState(0);
-
+  const [show, setShow] = useState("all"); // MASON-9: "all" | "mine"
   // The first and last day on screen, e.g. Nov 1 – Dec 5 for November's month view.
   const { start, end } = getVisibleRange(view, anchor);
   // As strings, because the effect below should re-run when the DAYS change.
@@ -53,7 +57,7 @@ export default function CalendarPage({ refreshKey }) {
   // One string that names "the data we want right now". It changes whenever the range,
   // refreshKey or reloadKey changes. loadedKey = the request whose answer we have.
   // We're loading while the two don't match, so there's no setLoading(true) in the effect.
-  const requestKey = `${from}|${to}|${refreshKey}|${reloadKey}`;
+  const requestKey = `${from}|${to}|${refreshKey}|${reloadKey}|${show}`;
   const [loadedKey, setLoadedKey] = useState(null);
   const loading = loadedKey !== requestKey;
 
@@ -61,7 +65,8 @@ export default function CalendarPage({ refreshKey }) {
   // after an event is created (refreshKey), or after the pop-up closes (reloadKey).
   useEffect(() => {
     let ignore = false; // ignore an old answer that arrives after a newer request (same trick as EventsPage)
-    getEventsInRange(from, to)
+    const load = show === "mine" ? getMyRegisteredEventsInRange : getEventsInRange;
+    load(from, to)
       .then((items) => {
         if (ignore) return;
         setEvents(items);
@@ -70,13 +75,14 @@ export default function CalendarPage({ refreshKey }) {
       })
       .catch((err) => {
         if (ignore) return;
-        setError(err.message);
+        setEvents([]);
+        setError(err.status === 401 ? "Log in to see the events you registered for." : err.message);
         setLoadedKey(requestKey);
       });
     return () => {
       ignore = true;
     };
-  }, [from, to, requestKey]);
+  }, [from, to, show, requestKey]);
 
   // { "2026-11-05": [events...] }, only recalculated when `events` changes.
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
@@ -102,7 +108,19 @@ export default function CalendarPage({ refreshKey }) {
 
         {/* aria-live: screen readers announce the new title when it changes */}
         <h2 className="calendar-title" aria-live="polite">{formatTitle(view, anchor)}</h2>
-
+        <div className="calendar-views" role="group" aria-label="Show which events">
+          {SHOW_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={show === option.value}
+              className={show === option.value ? "is-active" : ""}
+              onClick={() => setShow(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
         {/* aria-pressed tells screen readers which view button is "on" */}
         <div className="calendar-views" role="group" aria-label="Calendar view">
           {VIEWS.map((v) => (
@@ -125,7 +143,7 @@ export default function CalendarPage({ refreshKey }) {
         <p className="error" role="alert">Could not load events: {error}</p>
       ) : (
         <p className="calendar-status">
-          {loading ? "Loading events…" : `${events.length} event${events.length === 1 ? "" : "s"} shown`}
+      {loading ? "Loading events…" : statusText(show, view, events.length)}
         </p>
       )}
 
@@ -153,7 +171,12 @@ export default function CalendarPage({ refreshKey }) {
     </section>
   );
 }
-
+function statusText(show, view, count) {
+  const plural = count === 1 ? "" : "s";
+  if (show === "all") return `${count} event${plural} shown`;
+  if (count === 0) return `You haven't registered for any events this ${view}. Switch to All events to find one.`;
+  return `${count} of your registered event${plural} shown`;
+}
 // ===================================================================
 // The pieces below are small components used by CalendarPage.
 // They live OUTSIDE CalendarPage on purpose: a component defined inside
