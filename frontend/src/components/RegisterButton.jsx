@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { registerForEvent, cancelRegistration, getMyRegistration } from "../api/eventsApi";
 import "./RegisterButton.css";
+import ReminderToggle from "./ReminderToggle";
 
  // ---- State ----
   // checking:   true until the server tells us whether we're registered
@@ -16,6 +17,7 @@ import "./RegisterButton.css";
   // confirming: true while the "Are you sure?" question is showing
   // message:    a short note under the buttons, e.g. "Your registration was cancelled."
   // isError:    true = show the message in red (and announce it as an alert)
+  // remind:     true = "Remind me the day before" is ticked
 export default function RegisterButton({ event, onRegistered, onCancelled }) { 
   const [checking, setChecking] = useState(true);
   const [registered, setRegistered] = useState(false);
@@ -23,6 +25,7 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState(null);
   const [isError, setIsError] = useState(false);
+  const [remind, setRemind] = useState(false);
 
   const isFull = event.capacity > 0 && (event.registeredCount ?? 0) >= event.capacity;
 
@@ -158,6 +161,8 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
         >
           Cancel registration
         </button>
+
+        <RemindToggle eventId={event.id} remind={remind} onChange={setRemind} />
       </>
     );
   } else {

@@ -5,9 +5,6 @@
  * getUpcomingEvents(major)           -> the next few events for that major (real GET /events)
  *
  * RESOURCES USE SAMPLE DATA FOR NOW.
- * Jean's MASON-7 (submit a resource) owns the resource table. Once her columns are on
- * main and GET /resources exists, set USE_SAMPLE_RESOURCES to false: the page doesn't change.
- * If her field names differ, adjust them in toCard() below, nowhere else.
  *
  * A resource (the basic shape the cards use):
  *   { id, title, description, type, industry, link, majors: [..], sharedBy, status }
@@ -15,8 +12,10 @@
 
 const USE_SAMPLE_RESOURCES = true;
 
+import { authHeaders, handleUnauthorized } from "./auth";
+
 const BASE_URL = import.meta.env.PROD ? "" : "/api";
-const AUTH_TOKEN = import.meta.env.VITE_DEV_TOKEN || "student-token";
+//const AUTH_TOKEN = import.meta.env.VITE_DEV_TOKEN || "student-token";
 
 export const MAJORS = [
   "All majors",
@@ -66,12 +65,13 @@ const SAMPLE_RESOURCES = [
 async function request(path) {
   let response;
   try {
-    response = await fetch(BASE_URL + path, { headers: { Authorization: `Bearer ${AUTH_TOKEN}` } });
+    response = await fetch(BASE_URL + path, { headers: authHeaders() });
   } catch {
     throw new Error("Can't reach the server. Is the backend running?");
   }
   const body = await response.json().catch(() => null);
   if (!response.ok) {
+    if (response.status === 401) handleUnauthorized();
     const error = new Error(body?.error || `Request failed (${response.status})`);
     error.status = response.status;
     error.code = body?.code;

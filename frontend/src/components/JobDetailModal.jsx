@@ -1,5 +1,5 @@
 /**
- * JobDetailModal (MASON-13): the pop-up that shows one posting in full.
+ * JobDetailModal: the pop-up that shows one posting in full.
  *
  * Students see the details and an "Apply" link to the employer's own site.
  * Staff also see Edit (swaps the details for JobForm) and Delete (asks
@@ -16,12 +16,13 @@
  *   error      = a message to show, e.g. "This posting no longer exists."
  */
 import { useEffect, useState } from "react";
-import { IS_STAFF, deleteOpportunity, formatDeadline, getOpportunity } from "../api/opportunitiesApi";
+import { deleteOpportunity, formatDeadline, getOpportunity } from "../api/opportunitiesApi";
 import JobForm from "./JobForm";
 import "./EventDetailModal.css";
 import "../pages/JobsPage.css";
 
 export default function JobDetailModal({ jobId, onClose, onChanged }) {
+	const { isStaff } = useAuth();
 	const [job, setJob] = useState(null);
 	const [mode, setMode] = useState("view");
 	const [error, setError] = useState(null);
@@ -100,14 +101,14 @@ export default function JobDetailModal({ jobId, onClose, onChanged }) {
 					Apply on the employer's site
 				</a>
 
-				{IS_STAFF && mode === "view" && (
+				{isStaff && mode === "view" && (
 					<div className="job-staff-actions">
 						<button type="button" className="job-button job-button--plain" onClick={() => setMode("edit")}>Edit</button>
 						<button type="button" className="job-button job-button--danger" onClick={() => setMode("confirmDelete")}>Delete</button>
 					</div>
 				)}
 
-				{IS_STAFF && mode === "confirmDelete" && (
+				{isStaff && mode === "confirmDelete" && (
 					<div className="job-staff-actions" role="alert">
 						<span>Delete this posting? This can't be undone.</span>
 						<button type="button" className="job-button job-button--plain" onClick={() => setMode("view")}>Keep it</button>

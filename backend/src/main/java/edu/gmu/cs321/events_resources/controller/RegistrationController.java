@@ -14,15 +14,18 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
+import edu.gmu.cs321.events_resources.common.ApiException;
 import edu.gmu.cs321.events_resources.common.AuthInterceptor;
 import edu.gmu.cs321.events_resources.common.PagedResponse;
 import edu.gmu.cs321.events_resources.model.CurrentUser;
 import edu.gmu.cs321.events_resources.model.RegisteredEvent;
 import edu.gmu.cs321.events_resources.model.Registration;
+import edu.gmu.cs321.events_resources.model.ReminderRequest;
 import edu.gmu.cs321.events_resources.service.RegistrationService;
 import edu.gmu.cs321.events_resources.model.RegistrationStatus;
 
@@ -39,7 +42,8 @@ import edu.gmu.cs321.events_resources.model.RegistrationStatus;
  * turned into JSON by ErrorHandler, so there's no error handling here either.
  *
  * ENDPOINTS
- *   POST /events/{id}/register                   register the logged-in user         -> 201
+ *   POST /events/{id}/register                   register the logged-in user       -> 201
+ *   PUT /events/{id}/register/reminder           turn my reminder on/off           -? 200
  *   GET  /users/{userId}/events/registered       list of events a user signed up for -> 200
  */
 @RestController // Spring creates one of these and sends matching requests to its methods
@@ -106,6 +110,27 @@ public class RegistrationController {
             @RequestAttribute(AuthInterceptor.CURRENT_USER) CurrentUser user) {
 
         return service.status(id, user);
+    }
+
+    /**
+     * PUT /events/{id}/register/reminder: turn the logged-in user's reminder
+     * for event {id} on or off. Body: {"remind": true} or {"remind": false}.
+     *
+     * Success: 200 + the updated status, e.g.
+     *          {"eventId": 3, "registered": true, "registeredAt": "...", "remind": true}
+     * Errors: 400 VALIDATION_ERROR (no "remind" in the body), 404 NOT_FOUND (no such event),
+     *         404 NOT_REGISTERED (you aren't registered), 401 no/bad token
+     */
+    @PutMapping("/events/{id}/register/reminder")
+    public RegistrationStatus setReminder(
+            @PathVariable long id,
+            @RequestBody(required = false) ReminderRequest body,
+            @RequestAttribute(AuthInterceptor.CURRENT_USER) CurrentUser user) {
+
+        if (body == null || body.remind() == null) {
+            throw ApiException.badRequest("Missing \"remind\"", "remind: must be true or false");
+        }
+        return service.setReminder(id, user, body.remind());
     }
 
     /**

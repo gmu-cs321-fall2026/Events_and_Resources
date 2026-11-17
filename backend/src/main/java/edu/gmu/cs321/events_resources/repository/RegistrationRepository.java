@@ -1,6 +1,8 @@
 // "This file lives in the repository/ folder." Must match the folder the file is in.
 package edu.gmu.cs321.events_resources.repository;
 
+import java.time.LocalDateTime;
+
 // ---------------------------------------------------------------------------
 // IMPORTS: tell Java where to find each class this file uses.
 // ---------------------------------------------------------------------------
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Repository;
 
 import edu.gmu.cs321.events_resources.model.RegisteredEvent;
 import edu.gmu.cs321.events_resources.model.Registration;
+import edu.gmu.cs321.events_resources.model.DueReminder;
 
 /**
  * RegistrationRepository: the STORAGE layer for registrations.
@@ -194,11 +197,58 @@ public class RegistrationRepository {
     // Used by insert() and find(). (Moved here from insert() so both share one copy.)
     // A "row mapper" written as a lambda: rs = the row ("result set"),
     // rowNum = which row it is (we don't need it).
+
+    /**
+     * Turns this user's reminder for this event on or off.
+     * Returns false if they aren't registered (no row to change).
+     */
+    public boolean setReminder(long eventId, UUID userId, boolean remind) {
+        int rowsChanged = jdbc.update(
+                "UPDATE registrations SET remind = ? WHERE event_id = ? AND user_id = ?",
+                remind, eventId, userId);
+        return rowsChanged == 1;
+    }
+
+    /**
+     * Every reminder that should go out now: the reminder is on, it hasn't been sent,
+     * and the event starts between "from" and "until".
+     *
+     * (e.event_date + e.event_time) joins the DATE and TIME columns into one TIMESTAMP,
+     * so we can compare it with a moment in time. "from" and "until" come from Java
+     * (in Career Services' time zone), because event times are stored as local times.
+     */
+    public List<DueReminder> findDueReminders(LocalDateTime from, LocalDateTime until) {
+        return jdbc.query(
+                "SELECT r.id, r.user_id, e.id AS event_id, e.event_title, "
+                        + "       e.event_date, e.event_time, e.location, e.register_link "
+                        + "FROM registrations r "
+                        + "JOIN events e ON e.id = r.event_id "
+                        + "WHERE r.remind = TRUE "
+                        + "  AND r.reminder_sent_at IS NULL "
+                        + "  AND (e.event_date + e.event_time) BETWEEN ? AND ? "
+                        + "ORDER BY e.event_date, e.event_time",
+                DUE_REMINDER_MAPPER,
+                from, until);
+    }
+
+    /**
+     * Records that this registration's reminder was sent, so the next check skips it.
+     * "AND reminder_sent_at IS NULL" makes it count only once, even if two checks overlap.
+     */
+    public boolean markReminderSent(long registrationId) {
+        int rowsChanged = jdbc.update(
+                "UPDATE registrations SET reminder_sent_at = now() "
+                        + "WHERE id = ? AND reminder_sent_at IS NULL",
+                registrationId);
+        return rowsChanged == 1;
+    }
     private static final RowMapper<Registration> REGISTRATION_MAPPER = (rs, rowNum) -> new Registration(
             rs.getLong("id"),                      
             rs.getLong("event_id"),
             rs.getObject("user_id", UUID.class),            
-            rs.getTimestamp("created_at").toLocalDateTime());
+            rs.getTimestamp("created_at").toLocalDateTime(),
+            rs.getBoolean("remind"));
+
 
     // Turns one row of the JOIN query above into a RegisteredEvent.
     // "static final" = defined once and reused for every row, every time.
@@ -217,4 +267,14 @@ public class RegistrationRepository {
             rs.getInt("capacity"),
             rs.getInt("registered_count"),
             rs.getString("registered_at")); // the "AS registered_at" column
+
+    private static final RowMapper<DueReminder> DUE_REMINDER_MAPPER = (rs, rowNum) -> new DueReminder(
+            rs.getLong("id"),
+            rs.getObject("user_id", UUID.class),
+            rs.getLong("event_id"),
+            rs.getString("event_title"),
+            rs.getDate("event_date").toLocalDate(),
+            rs.getTime("event_time").toLocalTime(),
+            rs.getString("location"),
+            rs.getString("register_link"));
 }

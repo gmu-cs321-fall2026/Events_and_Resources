@@ -77,6 +77,14 @@ CREATE TABLE IF NOT EXISTS registrations (
     UNIQUE (event_id, user_id)                -- the same student can't register twice for one event
 );
 
+-- Set a reminder: a student can ask to be reminded the day before.
+--   remind           = they turned the reminder on
+--   reminder_sent_at = when we asked Notifications to send it (NULL = not sent yet),
+--                      so nobody ever gets the same reminder twice
+-- ADD COLUMN IF NOT EXISTS updates databases that already have the table: no reset needed.
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS remind BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMP;
+
 -- ---------------------------------------------------------------------------
 -- Resources: one row per career resource.
 -- ---------------------------------------------------------------------------
@@ -100,7 +108,7 @@ CREATE TABLE IF NOT EXISTS opportunity (
 	link		VARCHAR(500) NOT NULL
 );
 
--- MASON-13 (Post jobs): every posting also needs a description and a type.
+-- Post jobs: every posting also needs a description and a type.
 -- ALTER TABLE ... ADD COLUMN IF NOT EXISTS adds them to a database that already has
 -- the table, so nobody has to reset their database for this change.
 ALTER TABLE opportunity ADD COLUMN IF NOT EXISTS description VARCHAR(2000) NOT NULL DEFAULT '';

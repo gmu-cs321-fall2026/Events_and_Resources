@@ -27,6 +27,8 @@ import jakarta.servlet.http.HttpServletResponse;
  * WHICH URLs NEED WHAT (see needsLogin() and needsStaff() below):
  *   GET  /events, GET /events/{id}           public, no token needed
  *   POST /events/{id}/register               any logged-in user
+ *   PUT / events/{id}/register/reminder      any logged-in user, only their own registration
+ *   GET /session/me                          any logged-in user (Who am I?)
  *   GET  /users/{userId}/events/registered   any logged-in user (the service checks it's YOUR list)
  *   POST /events                             staff/admin only
  *   PUT / DELETE /events/{id}                staff/admin only

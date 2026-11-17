@@ -123,4 +123,51 @@ describe("eventsApi", () => {
 
     await expect(getEvents()).rejects.toThrow("Can't reach the server. Is the backend running?");
   });
+
+  // ---- Login token (auth.js) ----
+
+  it("sends no Authorization header when nobody is logged in", async () => {
+    setToken(null);
+    fetchMock.mockResolvedValue(fakeResponse(200, { items: [], page: 1, pageSize: 20, totalCount: 0 }));
+
+    await getEvents();
+
+    const [, options] = fetchMock.mock.calls[0];
+    expect(options.headers.Authorization).toBeUndefined();
+  });
+
+  it("a 401 forgets the token and tells the page the login expired", async () => {
+    const expired = vi.fn();
+    setOnExpired(expired);
+    fetchMock.mockResolvedValue(fakeResponse(401, { error: "Unauthorized", code: "UNAUTHORIZED", detail: "" }));
+
+    await expect(registerForEvent(3)).rejects.toMatchObject({ status: 401 });
+
+    expect(getToken()).toBeNull();
+    expect(expired).toHaveBeenCalledTimes(1);
+  });
+
+  // ---- Reminders ----
+
+  it("setReminder sends a PUT with {remind} and returns the new status", async () => {
+    const status = { eventId: 3, registered: true, registeredAt: "2026-10-30T17:05:12", remind: true };
+    fetchMock.mockResolvedValue(fakeResponse(200, status));
+
+    const result = await setReminder(3, true);
+
+    expect(result).toEqual(status);
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/events/3/register/reminder");
+    expect(options.method).toBe("PUT");
+    expect(options.headers["Content-Type"]).toBe("application/json");
+    expect(JSON.parse(options.body)).toEqual({ remind: true });
+  });
+
+  it("setReminder when you aren't registered becomes an error with code NOT_REGISTERED", async () => {
+    fetchMock.mockResolvedValue(
+      fakeResponse(404, { error: "You aren't registered for this event", code: "NOT_REGISTERED", detail: "" })
+    );
+
+    await expect(setReminder(3, true)).rejects.toMatchObject({ status: 404, code: "NOT_REGISTERED" });
+  });
 });

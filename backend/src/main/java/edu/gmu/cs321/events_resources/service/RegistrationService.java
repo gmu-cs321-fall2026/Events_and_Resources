@@ -145,8 +145,32 @@ public class RegistrationService {
         Optional<Registration> found = registrations.find(eventId, user.id());
 
         LocalDateTime registeredAt = found.map(Registration::createdAt).orElse(null);
+        boolean remind = found.map(Registration::remind).orElse(false);
 
-        return new RegistrationStatus(eventId, found.isPresent(), registeredAt);
+        return new RegistrationStatus(eventId, found.isPresent(), registeredAt, remind);
+    }
+
+    /**
+     * Turns the logged-in user's reminder for an event on or off.
+     * The rules, in order:
+     *   1. The event must exist                -> otherwise 404 NOT_FOUND
+     *   2. The user must be registered for it  -> otherwise 404 NOT_REGISTERED
+     *   3. Save the choice and return the updated status (the pop-up redraws from it)
+     *
+     * Like cancel(), the user comes from the login token, so nobody can change
+     * someone else's reminder. ReminderService sends the reminder the day before.
+     */
+    public RegistrationStatus setReminder(long eventId, CurrentUser user, boolean remind) {
+        if (!registrations.eventExists(eventId)) {
+            throw ApiException.notFound("Event " + eventId + " not found");
+        }
+
+        if (!registrations.setReminder(eventId, user.id(), remind)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "NOT_REGISTERED",
+                    "You aren't registered for this event", "");
+        }
+
+        return status(eventId, user);
     }
 
     /**

@@ -1,4 +1,4 @@
-package edu.gmu.cs321.events_resources;
+package edu.gmu.cs321.events_resources.service;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,7 +20,6 @@ import edu.gmu.cs321.events_resources.model.CurrentUser;
 import edu.gmu.cs321.events_resources.model.Registration;
 import edu.gmu.cs321.events_resources.model.RegistrationStatus;
 import edu.gmu.cs321.events_resources.repository.RegistrationRepository;
-import edu.gmu.cs321.events_resources.service.RegistrationService;
 
 /**
  * Unit tests for RegistrationService.cancel(...) and status(...).
