@@ -75,6 +75,23 @@ INSERT INTO events (event_title, host, event_date, event_time, location, categor
 SELECT 'Mock Technical Interviews', 'CS Department', '2026-11-03', '14:00', 'Nguyen Engineering 1103', 'Workshop', 'CS Majors, Juniors, Seniors', 'In-person', 12
 WHERE NOT EXISTS (SELECT 1 FROM events WHERE event_title = 'Mock Technical Interviews');
 
+
+-- UPCOMING EVENTS (MASON-50): future-dated samples, so Home's "Coming up" and the
+-- search bar have something to show. Their audiences are already linked below.
+-- Same rule as above: a row is only added if no event with that title exists yet.
+INSERT INTO events (event_title, host, event_date, event_time, location, category, audience, format, register_link, capacity)
+SELECT v.title, v.host, v.event_date::date, v.event_time::time, v.location, v.category, v.audience, v.format, NULL, v.capacity
+FROM (VALUES
+    ('Federal Careers Info Session', 'Office of Personnel Management', '2026-11-19', '16:00', 'Zoom',                       'Employer Info Session', 'All Students','Virtual', 0),
+    ('Salary Negotiation 101', 'Career Services','2026-11-24','13:00','Johnson Center 240','Workshop', 'Seniors, Graduate Students','In-person', 40),
+    ('Cybersecurity Careers Networking Hour', 'GMU Cyber Club', '2026-12-03', '18:00', 'Horizon Hall 1010',        'Networking', 'CS Majors, IT Majors', 'In-person', 60),
+    ('First-Gen Career Mixer', 'Career Services', '2026-12-08', '17:30', 'Merten Hall 1200', 'Networking', 'First-Generation Students', 'In-person', 50),
+    ('Career Services Staff Training','Career Services','2026-12-10', '10:00', 'SUB I, Room 3B', 'Internal', 'Staff', 'In-person', 20),
+    ('Grad School Panel: Is a Master''s Worth It?', 'Graduate Admissions', '2027-01-27', '16:30', 'Zoom', 'Panel', 'Juniors, Seniors, International Students','Virtual', 0),
+    ('Alumni in Industry Panel', 'GMU Alumni Association', '2027-02-04', '18:00', 'Fenwick Library Atrium', 'Panel', 'All Students, Alumni','In-person', 120),
+    ('Spring Internship Fair','Career Services', '2027-02-11', '11:00', 'EagleBank Arena','Career Fair', 'All Students', 'In-person', 0)
+) AS v(title, host, event_date, event_time, location, category, audience, format, capacity)
+WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.event_title = v.title);
 -- 4. EVENT_AUDIENCES (links each event to its audiences)
 -- We don't know the ids ahead of time (the database picks them), so we look
 -- them up by event title and audience name:
