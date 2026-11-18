@@ -200,4 +200,50 @@ class AuthInterceptorTest {
             assertTrue(run(request("DELETE", "/opportunities/2", token)));
         }
     }
+
+    /*
+     * Waitlist (MASON-18 / MASON-19): students join/leave with a login,
+     * only staff/admin can see the line or change the capacity.
+     */
+
+    @Test
+    void joiningTheWaitlistNeedsALogin() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("POST", "/events/3/waitlist", null)));
+
+        assertEquals("UNAUTHORIZED", error.getCode());
+    }
+
+    @Test
+    void studentCanJoinAndLeaveTheWaitlist() {
+        assertTrue(run(request("POST", "/events/3/waitlist", "student-token")));
+        assertTrue(run(request("DELETE", "/events/3/waitlist", "student-token")));
+    }
+
+    @Test
+    void seeingTheWaitlistIsNotPublicEvenThoughItIsAGet() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/events/3/waitlist", null)));
+
+        assertEquals("UNAUTHORIZED", error.getCode());
+    }
+
+    @Test
+    void studentSeeingTheWaitlistOrChangingCapacityIs403() {
+        ApiException seeing = assertThrows(ApiException.class,
+                () -> run(request("GET", "/events/3/waitlist", "student-token")));
+        ApiException changing = assertThrows(ApiException.class,
+                () -> run(request("PUT", "/events/3/capacity", "student-token")));
+
+        assertEquals("FORBIDDEN", seeing.getCode());
+        assertEquals("FORBIDDEN", changing.getCode());
+    }
+
+    @Test
+    void staffAndAdminCanSeeTheWaitlistAndChangeCapacity() {
+        for (String token : List.of("staff-token", "admin-token")) {
+            assertTrue(run(request("GET", "/events/3/waitlist", token)));
+            assertTrue(run(request("PUT", "/events/3/capacity", token)));
+        }
+    }
 }

@@ -1,0 +1,124 @@
+/**
+ * WaitlistPanel.css (MASON-19): the staff waitlist box in the event pop-up.
+ * Uses the team's color variables from index.css, so it follows light/dark mode.
+ */
+
+.waitlist-panel {
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.waitlist-panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1em;
+  color: var(--text-h);
+}
+
+.waitlist-panel-count {
+  font-size: 0.8em;
+  font-weight: normal;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+}
+
+/**
+ * The line of people: position, who, when they joined
+ */
+.waitlist-panel-list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.waitlist-panel-list li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.waitlist-panel-position {
+  min-width: 2.5em;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.waitlist-panel-joined {
+  margin-left: auto;
+  font-size: 0.85em;
+}
+
+.waitlist-panel-empty {
+  margin: 0 0 12px;
+}
+
+/**
+ * Capacity form: label, number box and button on one row
+ */
+.waitlist-panel-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.waitlist-panel-form input {
+  width: 6em;
+  padding: 6px 8px;
+  font: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.waitlist-panel-form button {
+  padding: 6px 12px;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.waitlist-panel-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.waitlist-panel-fit {
+  margin-top: 8px;
+  padding: 0;
+  font: inherit;
+  font-size: 0.9em;
+  color: var(--accent);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.waitlist-panel-hint {
+  margin: 8px 0 0;
+  font-size: 0.85em;
+}
+
+.waitlist-panel-message {
+  margin: 8px 0 0;
+  color: var(--text-h);
+}
+
+.waitlist-panel-error {
+  color: #c0392b;
+}

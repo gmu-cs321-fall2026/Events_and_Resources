@@ -114,3 +114,11 @@
   outline: 2px solid var(--accent-border);
   outline-offset: 2px;
 }
+
+/* MASON-18: the small grey line under "Join waitlist" / "On the waitlist · #2" */
+.waitlist-note {
+  margin: 8px 0 0;
+  font-size: 0.9em;
+  text-align: center;
+  color: var(--text);
+}

@@ -8,6 +8,8 @@
 import { useEffect, useState } from "react";
 import { getEventById } from "../api/eventsApi";
 import RegisterButton from "./RegisterButton";
+import WaitlistPanel from "./WaitlistPanel";
+import { IS_STAFF } from "../api/opportunitiesApi";
 import "./EventDetailModal.css";
 
 
@@ -129,6 +131,15 @@ export default function EventDetailModal({ eventId, onClose }) {
             setEvent((e) => ({ ...e, registeredCount: Math.max(0, (e.registeredCount ?? 0) - 1) }))
           }
         />
+
+        {/* MASON-19: staff/admin see the waitlist and can change the capacity.
+            Only for limited events: an unlimited event (capacity 0) never has a waitlist. */}
+        {IS_STAFF && event.capacity > 0 && (
+          <WaitlistPanel
+            event={event}
+            onCapacityChanged={(seats) => setEvent((e) => ({ ...e, ...seats }))}
+          />
+        )}
       </>
           );
   }

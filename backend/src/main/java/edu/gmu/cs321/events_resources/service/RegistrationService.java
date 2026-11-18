@@ -58,9 +58,13 @@ public class RegistrationService {
     // The repository with all the SQL. "final" = set once, never replaced.
     private final RegistrationRepository registrations;
 
-    // Spring calls this at startup and passes in the RegistrationRepository.
-    public RegistrationService(RegistrationRepository registrations) {
+    /** MASON-18: the waitlist rules. Used to fill a freed seat and to report a student's place in line. */
+    private final WaitlistService waitlist;
+
+    // Spring calls this at startup and passes in the RegistrationRepository and WaitlistService.
+    public RegistrationService(RegistrationRepository registrations, WaitlistService waitlist) {
         this.registrations = registrations;
+        this.waitlist = waitlist;
     }
 
     /**
@@ -111,6 +115,7 @@ public class RegistrationService {
      *   1. The event must exist                    -> otherwise 404 NOT_FOUND
      *   2. The user must be registered for it      -> otherwise 404 NOT_REGISTERED
      *   3. Delete the registration and free the seat -> the controller returns 204 No Content
+     *   4. MASON-18: give the freed seat to the first person on the waitlist (if anyone is waiting)
      *
      * A user can only ever cancel THEIR OWN registration: the user comes from the
      * login token, and there's no user id in the URL or body to change.
@@ -126,6 +131,8 @@ public class RegistrationService {
             throw new ApiException(HttpStatus.NOT_FOUND, "NOT_REGISTERED",
                     "You aren't registered for this event", "");
         }
+
+        waitlist.fillOpenSeats(eventId);
     }
 
     /**
@@ -146,7 +153,11 @@ public class RegistrationService {
 
         LocalDateTime registeredAt = found.map(Registration::createdAt).orElse(null);
 
-        return new RegistrationStatus(eventId, found.isPresent(), registeredAt);
+        // MASON-18: also say whether they're waiting in line, and where.
+        Optional<Integer> place = waitlist.position(eventId, user.id());
+
+        return new RegistrationStatus(eventId, found.isPresent(), registeredAt,
+                place.isPresent(), place.orElse(null));
     }
 
     /**
