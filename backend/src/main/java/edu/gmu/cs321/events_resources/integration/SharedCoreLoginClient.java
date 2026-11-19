@@ -17,7 +17,7 @@ import edu.gmu.cs321.events_resources.model.LoginRequest;
 import edu.gmu.cs321.events_resources.model.LoginResponse;
 
 /**
- * SharedCoreLoginClient: the REAL login. Passes the email + password on to
+ * SharedCoreLoginClient: the check when login. Passes the email + password on to
  * Shared Core's POST /auth/login and returns the token they give back.
  *
  * Shared Core's answers, and what we send to the website:

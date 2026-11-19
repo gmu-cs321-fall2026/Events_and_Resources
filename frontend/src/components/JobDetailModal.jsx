@@ -18,6 +18,7 @@
 import { useEffect, useState } from "react";
 import { deleteOpportunity, formatDeadline, getOpportunity } from "../api/opportunitiesApi";
 import JobForm from "./JobForm";
+import { useAuth } from "../auth/useAuth";
 import "./EventDetailModal.css";
 import "../pages/JobsPage.css";
 

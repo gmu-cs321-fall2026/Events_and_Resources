@@ -227,4 +227,26 @@ class AuthInterceptorTest {
         assertTrue(run(request("PUT", "/events/3/register/reminder", "student-token")));
     }
 
+    @Test
+    void remindersListNeedsALogin() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/registrations/reminders", null)));
+
+        assertEquals(401, error.getStatus().value());
+    }
+
+    @Test
+    void studentsCannotReadTheRemindersList() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/registrations/reminders", "student-token")));
+
+        assertEquals(403, error.getStatus().value());
+    }
+
+    @Test
+    void staffAndAdminCanReadTheRemindersList() {
+        for (String token : List.of("staff-token", "admin-token")) {
+            assertTrue(run(request("GET", "/registrations/reminders", token)));
+        }
+    }
 }

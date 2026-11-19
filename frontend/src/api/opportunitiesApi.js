@@ -37,7 +37,7 @@ async function request(path, options = {}) {
 	try {
 		response = await fetch(BASE_URL + path, {
 			...options,
-			headers: { ...options.headers, Authorization: `Bearer ${AUTH_TOKEN}` },
+			headers: { ...options.headers, ...authHeaders() },
 		});
 	} catch {
 		throw new Error("Can't reach the server. Is the backend running?");

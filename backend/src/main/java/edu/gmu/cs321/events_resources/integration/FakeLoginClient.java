@@ -45,7 +45,12 @@ public class FakeLoginClient implements LoginClient{
      */
     @Override
     public LoginResponse login(String email, String password) {
-        String token = email == null ? null : TOKENS_BY_EMAIL.get(email.trim().toLowerCase(Locale.ROOT));
+        String token;
+        if (email == null)
+            token =  null;
+        else
+            token = TOKENS_BY_EMAIL.get(email.trim().toLowerCase(Locale.ROOT));
+        
         if (token == null || !TEST_PASSWORD.equals(password)) {
             throw ApiException.unauthorized(WRONG_LOGIN);
         }

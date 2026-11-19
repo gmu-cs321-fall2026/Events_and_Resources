@@ -12,7 +12,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // The functions we're testing. "./" = same folder as this file.
-import { getEvents, registerForEvent, cancelRegistration, getMyRegistration } from "./eventsApi";
+import { getEvents, registerForEvent, cancelRegistration, getMyRegistration, setReminder } from "./eventsApi";
+
+import { setToken, getToken, setOnExpired } from "./auth";
 
 // Helper: builds the fake answer fetch() gives back.
 // Response is built into Node and the browser: it's what a real fetch() returns.
@@ -27,10 +29,13 @@ describe("eventsApi", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock); // every fetch() in eventsApi.js now calls fetchMock
+    setToken("student-token"); //act as the logged-in test student (jdoe)
   });
 
   afterEach(() => {
     vi.unstubAllGlobals(); // put the real fetch back so tests don't affect each other
+    setToken(null);
+    setOnExpired(null);
   });
 
   it("getEvents asks for the right page and returns the backend's answer", async () => {

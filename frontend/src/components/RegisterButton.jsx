@@ -45,7 +45,10 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
     let ignore = false;
     getMyRegistration(event.id)
       .then((status) => {
-        if (!ignore) setRegistered(status.registered);
+        if (!ignore) {
+          setRegistered(status.registered);
+          setRemind(Boolean(status.remind));
+        }
       })
       .catch(() => {
       })
@@ -64,6 +67,7 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
     try {
       await registerForEvent(event.id);
       setRegistered(true);
+      setRemind(false);
       onRegistered();
     } catch (err) {
       if (err.code === "ALREADY_REGISTERED") {
@@ -162,7 +166,7 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
           Cancel registration
         </button>
 
-        <RemindToggle eventId={event.id} remind={remind} onChange={setRemind} />
+        <ReminderToggle eventId={event.id} remind={remind} onChange={setRemind} />
       </>
     );
   } else {

@@ -17,12 +17,17 @@ import org.springframework.web.client.RestClientException;
 /**
  * NotificationsClient: asks the Notifications subsystem (Subsystem 6) to notify a user.
  *
- * Send userId
+ * Used for notifications WE trigger, like the registration confirmation.
+ * Event reminders are not sent from here: Notifications reads our list
+ * (GET /registrations/reminders) and schedules them itself.
  *
- * send() returns false instead of throwing when Notifications is down, slow (2 s timeout) or says no. The caller decides what to do;
- * ReminderService simply tries again on its next check.
+ * We also send "userId", because their request has no field yet for who the
+ * notification is for (we've asked them to add it).
  *
+ * send() returns false instead of throwing when Notifications is down, slow
+ * (2 s timeout) or says no, so a notification problem never breaks our own features.
  */
+
 
 @Component
 public class NotificationsClient {

@@ -78,13 +78,10 @@ CREATE TABLE IF NOT EXISTS registrations (
 );
 
 -- Set a reminder: a student can ask to be reminded the day before.
---   remind           = they turned the reminder on
---   reminder_sent_at = when we asked Notifications to send it (NULL = not sent yet),
---                      so nobody ever gets the same reminder twice
+--   remind = they turned the reminder on. The Notifications subsystem reads who
+--            wants a reminder (GET /registrations/reminders) and sends it itself.
 -- ADD COLUMN IF NOT EXISTS updates databases that already have the table: no reset needed.
 ALTER TABLE registrations ADD COLUMN IF NOT EXISTS remind BOOLEAN NOT NULL DEFAULT FALSE;
-ALTER TABLE registrations ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMP;
-
 -- ---------------------------------------------------------------------------
 -- Resources: one row per career resource.
 -- ---------------------------------------------------------------------------

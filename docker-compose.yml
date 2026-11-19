@@ -55,6 +55,7 @@ services:
       # Real logins:  AUTH_MODE=shared-core docker compose up --build
       AUTH_MODE: ${AUTH_MODE:-fake}
       SHARED_CORE_URL: ${SHARED_CORE_URL:-http://host.docker.internal:8081}
+      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL:-http://host.docker.internal:8082}
     extra_hosts:
       # Makes host.docker.internal work on Linux too (Mac and Windows already have it).
       - "host.docker.internal:host-gateway"

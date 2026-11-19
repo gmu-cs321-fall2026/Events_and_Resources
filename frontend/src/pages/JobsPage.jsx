@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import { JOB_TYPES, getOpportunities } from "../api/opportunitiesApi";
 import JobCard from "../components/JobCard";
 import JobDetailModal from "../components/JobDetailModal";
+import { useAuth } from "../auth/useAuth";
 import JobForm from "../components/JobForm";
 import "./JobsPage.css";
 

@@ -6,15 +6,6 @@
 // Pages use them with `await getEvents()` or `getEvents().then(...)`.
 // "/api" is caught by the proxy in vite.config.js and sent to Spring Boot.
 const BASE_URL = import.meta.env.PROD ? "" : "/api";
-//// Added for registration (Yasmin) LINE 20
-// LOGIN TOKEN
-// The backend needs "Authorization: Bearer <token>" to know who you are (else 401).
-// Until Shared Core's real login exists, we use the backend's fake test tokens:
-//   student-token  (student #7)    student2-token  (student #8)    staff-token  (staff #1)
-// Default = student-token. To act as staff (e.g. to create events), run:
-//   VITE_DEV_TOKEN=staff-token npm run dev
-// LATER: replace this with the token Shared Core gives the user when they log in.
-// ---------------------------------------------------------------------------
 
 import { authHeaders, handleUnauthorized } from "./auth";
 //const AUTH_TOKEN = import.meta.env.VITE_DEV_TOKEN || "student-token";

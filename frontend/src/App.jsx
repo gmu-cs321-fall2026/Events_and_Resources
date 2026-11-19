@@ -17,6 +17,7 @@ function App() {
 	const [eventsView, setEventsView] = useState("calendar");
 	/** Goes up after staff post, edit or delete a job, so the Resources page's jobs panel reloads. */
 	const [jobsKey, setJobsKey] = useState(0);
+	const { isStaff } = useAuth();
 
 	return (
 		<div>

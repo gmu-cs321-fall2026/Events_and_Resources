@@ -23,11 +23,12 @@ import edu.gmu.cs321.events_resources.common.ApiException;
 import edu.gmu.cs321.events_resources.common.AuthInterceptor;
 import edu.gmu.cs321.events_resources.common.PagedResponse;
 import edu.gmu.cs321.events_resources.model.CurrentUser;
+import edu.gmu.cs321.events_resources.model.DueReminder;
+import edu.gmu.cs321.events_resources.model.RegistrationStatus;
 import edu.gmu.cs321.events_resources.model.RegisteredEvent;
 import edu.gmu.cs321.events_resources.model.Registration;
 import edu.gmu.cs321.events_resources.model.ReminderRequest;
 import edu.gmu.cs321.events_resources.service.RegistrationService;
-import edu.gmu.cs321.events_resources.model.RegistrationStatus;
 
 /**
  * RegistrationController: the API layer for registration.
@@ -43,8 +44,9 @@ import edu.gmu.cs321.events_resources.model.RegistrationStatus;
  *
  * ENDPOINTS
  *   POST /events/{id}/register                   register the logged-in user       -> 201
- *   PUT /events/{id}/register/reminder           turn my reminder on/off           -? 200
+ *   PUT /events/{id}/register/reminder           turn my reminder on/off           -> 200
  *   GET  /users/{userId}/events/registered       list of events a user signed up for -> 200
+ *   GET  /registrations/reminders                who wants a reminder (staff/admin)  -> 200
  */
 @RestController // Spring creates one of these and sends matching requests to its methods
 public class RegistrationController {
@@ -153,4 +155,25 @@ public class RegistrationController {
 
         return service.registeredEvents(userId, user, page, pageSize);
     }
+
+     /**
+     * GET /registrations/reminders?from=2026-11-20T09:00&to=2026-11-21T09:00&page=1&pageSize=20
+     * For the Notifications subsystem: one page of students who turned on "Remind me",
+     * for events starting between from and to (GMU local time), soonest first.
+     * from/to left out = the next 24 hours. Staff/admin token only.
+     *
+     * Success: 200 {"items": [DueReminder, ...], "page", "pageSize", "totalCount"}
+     * Errors: 400 VALIDATION_ERROR (bad from/to/page/pageSize), 401 no/bad token,
+     *         403 FORBIDDEN (not staff/admin)
+     */
+    @GetMapping("/registrations/reminders")
+    public PagedResponse<DueReminder> upcomingReminders(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
+
+        return service.upcomingReminders(from, to, page, pageSize);
+    }
+
 }
