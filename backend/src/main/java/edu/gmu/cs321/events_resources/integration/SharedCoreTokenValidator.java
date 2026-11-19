@@ -19,7 +19,7 @@ import edu.gmu.cs321.events_resources.common.ApiException;
 import edu.gmu.cs321.events_resources.model.CurrentUser;
 
 /**
- * SharedCoreTokenValidator: the REAL login check. It asks Shared Core
+ * SharedCoreTokenValidator: check the token if it still valid. It asks Shared Core
  * "who does this token belong to?" by calling their GET /auth/validate.
  *
  * Shared Core's answers, and what we do with each:

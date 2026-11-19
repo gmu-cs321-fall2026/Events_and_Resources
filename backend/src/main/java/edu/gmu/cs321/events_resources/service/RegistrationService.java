@@ -14,6 +14,9 @@ import edu.gmu.cs321.events_resources.common.PagedResponse;
 // Our record from model/: the logged-in user (UUID id + list of roles), attached by AuthInterceptor
 import edu.gmu.cs321.events_resources.model.CurrentUser;
 
+// Our record from model/: one student who asked for a reminder about one event
+import edu.gmu.cs321.events_resources.model.DueReminder;
+
 // Our record from model/: one event in a student's "my events" list
 import edu.gmu.cs321.events_resources.model.RegisteredEvent;
 
@@ -23,8 +26,13 @@ import edu.gmu.cs321.events_resources.model.RegistrationStatus;
 // Our class from repository/: all the SQL. The service calls it; it never writes SQL itself.
 import edu.gmu.cs321.events_resources.repository.RegistrationRepository;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 // Java's built-in ordered collection
+import java.util.ArrayList;
 import java.util.List;
 
 // Java's built-in type for Shared Core's user ids
@@ -34,6 +42,7 @@ import java.util.Optional;
 
 // Spring throws this when an INSERT breaks a UNIQUE rule in the database
 // (here: the same student registering twice for the same event).
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 // For @Service: "Spring, create one of these at startup" (and it marks this as the service layer)
@@ -55,12 +64,43 @@ import org.springframework.transaction.annotation.Transactional;
 @Service // Spring creates one of these and passes it to RegistrationController
 public class RegistrationService {
 
+    /** GMU's time zone. Event dates and times are stored as local GMU times. */
+    public static final ZoneId GMU_TIME = ZoneId.of("America/New_York");
+
     // The repository with all the SQL. "final" = set once, never replaced.
     private final RegistrationRepository registrations;
 
-    // Spring calls this at startup and passes in the RegistrationRepository.
-    public RegistrationService(RegistrationRepository registrations) {
+    // Where "now" comes from (only the reminders list uses it).
+    private final Clock clock;
+
+    /**
+     * MASON-18: the waitlist rules. Used to fill a freed seat and to report a student's
+     * place in line. null only in tests that don't involve the waitlist (the reminder tests).
+     */
+    private final WaitlistService waitlist;
+
+    // Spring calls this at startup and passes in the RegistrationRepository and WaitlistService.
+    // @Autowired tells Spring to use THIS constructor, since there are several.
+    @Autowired
+    public RegistrationService(RegistrationRepository registrations, WaitlistService waitlist) {
+        this(registrations, waitlist, Clock.system(GMU_TIME));
+    }
+
+    /** For tests: a fixed Clock makes "now" the same on every run. */
+    RegistrationService(RegistrationRepository registrations, WaitlistService waitlist, Clock clock) {
         this.registrations = registrations;
+        this.waitlist = waitlist;
+        this.clock = clock;
+    }
+
+    /** For tests that don't use the waitlist (RegistrationServiceReminderTest): nobody is ever waiting. */
+    RegistrationService(RegistrationRepository registrations) {
+        this(registrations, null, Clock.system(GMU_TIME));
+    }
+
+    /** For tests that don't use the waitlist (RegistrationServiceUpcomingRemindersTest), with a fixed Clock. */
+    RegistrationService(RegistrationRepository registrations, Clock clock) {
+        this(registrations, null, clock);
     }
 
     /**
@@ -111,6 +151,7 @@ public class RegistrationService {
      *   1. The event must exist                    -> otherwise 404 NOT_FOUND
      *   2. The user must be registered for it      -> otherwise 404 NOT_REGISTERED
      *   3. Delete the registration and free the seat -> the controller returns 204 No Content
+     *   4. MASON-18: give the freed seat to the first person on the waitlist (if anyone is waiting)
      *
      * A user can only ever cancel THEIR OWN registration: the user comes from the
      * login token, and there's no user id in the URL or body to change.
@@ -125,6 +166,10 @@ public class RegistrationService {
         if (!registrations.cancel(eventId, user.id())) {
             throw new ApiException(HttpStatus.NOT_FOUND, "NOT_REGISTERED",
                     "You aren't registered for this event", "");
+        }
+
+        if (waitlist != null) {
+            waitlist.fillOpenSeats(eventId);
         }
     }
 
@@ -145,8 +190,37 @@ public class RegistrationService {
         Optional<Registration> found = registrations.find(eventId, user.id());
 
         LocalDateTime registeredAt = found.map(Registration::createdAt).orElse(null);
+        boolean remind = found.map(Registration::remind).orElse(false);
 
-        return new RegistrationStatus(eventId, found.isPresent(), registeredAt);
+        // MASON-18: also say whether they're waiting in line, and where.
+        Optional<Integer> place = (waitlist == null) ? Optional.empty() : waitlist.position(eventId, user.id());
+
+        return new RegistrationStatus(eventId, found.isPresent(), registeredAt, remind,
+                place.isPresent(), place.orElse(null));
+    }
+
+    /**
+     * Turns the logged-in user's reminder for an event on or off.
+     * The rules, in order:
+     *   1. The event must exist                -> otherwise 404 NOT_FOUND
+     *   2. The user must be registered for it  -> otherwise 404 NOT_REGISTERED
+     *   3. Save the choice and return the updated status (the pop-up redraws from it)
+     *
+     * Like cancel(), the user comes from the login token, so nobody can change
+     * someone else's reminder. The Notifications subsystem reads who wants a
+     * reminder (GET /registrations/reminders) and sends it.
+     */
+    public RegistrationStatus setReminder(long eventId, CurrentUser user, boolean remind) {
+        if (!registrations.eventExists(eventId)) {
+            throw ApiException.notFound("Event " + eventId + " not found");
+        }
+
+        if (!registrations.setReminder(eventId, user.id(), remind)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "NOT_REGISTERED",
+                    "You aren't registered for this event", "");
+        }
+
+        return status(eventId, user);
     }
 
     /**
@@ -175,5 +249,57 @@ public class RegistrationService {
 
         // <> = "Java, figure out the type yourself" (here: RegisteredEvent)
         return new PagedResponse<>(items, page, pageSize, total);
+    }
+
+    /**
+     * One page of reminders for the Notifications subsystem: students who turned on
+     * "Remind me", for events starting between "from" and "to" (GMU local time).
+     * Notifications decides when to send each one and remembers which ones it sent.
+     *
+     * The rules, in order:
+     *   1. from / to must look like 2026-11-20T09:00   -> otherwise 400 VALIDATION_ERROR
+     *      Left out: from = now, to = from + 1 day ("events in the next 24 hours")
+     *   2. to must not be before from                  -> otherwise 400 VALIDATION_ERROR
+     *   3. page / pageSize in range                    -> otherwise 400 VALIDATION_ERROR
+     * Only staff/admin may ask (AuthInterceptor checks that before we get here).
+     */
+    public PagedResponse<DueReminder> upcomingReminders(String from, String to, int page, int pageSize) {
+        List<String> problems = new ArrayList<>();
+
+        // truncatedTo(MINUTES) drops seconds, so the default window is a tidy 09:00 -> 09:00.
+        LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MINUTES);
+        LocalDateTime start = parseDateTime(from, "from", now, problems);
+        LocalDateTime end = parseDateTime(to, "to", start == null ? now.plusDays(1) : start.plusDays(1), problems);
+
+        if (start != null && end != null && end.isBefore(start)) {
+            problems.add("to: must not be before from");
+        }
+        if (!problems.isEmpty()) {
+            throw ApiException.badRequest("Invalid reminder window", String.join("; ", problems));
+        }
+
+        PagedResponse.validate(page, pageSize);
+
+        List<DueReminder> items = registrations.findUpcomingReminders(
+                start, end, pageSize, PagedResponse.offset(page, pageSize));
+        long total = registrations.countUpcomingReminders(start, end);
+        return new PagedResponse<>(items, page, pageSize, total);
+    }
+
+    /**
+     * Reads "2026-11-20T09:00" into a LocalDateTime. Empty -> the given default.
+     * A bad value adds a problem and returns null, so all problems are reported at once.
+     */
+    private static LocalDateTime parseDateTime(String value, String name, LocalDateTime fallback,
+                                               List<String> problems) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        try {
+            return LocalDateTime.parse(value.trim());
+        } catch (DateTimeParseException e) {
+            problems.add(name + ": must look like 2026-11-20T09:00");
+            return null;
+        }
     }
 }

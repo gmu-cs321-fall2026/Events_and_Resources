@@ -1,4 +1,4 @@
-package edu.gmu.cs321.events_resources;
+package edu.gmu.cs321.events_resources.service;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,7 +20,6 @@ import edu.gmu.cs321.events_resources.model.CurrentUser;
 import edu.gmu.cs321.events_resources.model.Registration;
 import edu.gmu.cs321.events_resources.model.RegistrationStatus;
 import edu.gmu.cs321.events_resources.repository.RegistrationRepository;
-import edu.gmu.cs321.events_resources.service.RegistrationService;
 
 /**
  * Unit tests for RegistrationService.cancel(...) and status(...).
@@ -77,8 +76,32 @@ class RegistrationServiceCancelTest {
         }
     }
 
+    /**
+     * A fake WaitlistService (MASON-18): nobody is waiting, except OTHER_STUDENT is
+     * #2 in line for event 3. It counts how often cancel asks it to fill the freed seat.
+     */
+    static class FakeWaitlistService extends WaitlistService {
+        int fillCalls = 0;
+
+        FakeWaitlistService() {
+            super(null, null);
+        }
+
+        @Override
+        public List<UUID> fillOpenSeats(long eventId) {
+            fillCalls++;
+            return List.of();
+        }
+
+        @Override
+        public Optional<Integer> position(long eventId, UUID userId) {
+            return userId.equals(OTHER_STUDENT.id()) ? Optional.of(2) : Optional.empty();
+        }
+    }
+
     private final FakeRegistrationRepository repo = new FakeRegistrationRepository();
-    private final RegistrationService service = new RegistrationService(repo);
+    private final FakeWaitlistService waitlist = new FakeWaitlistService();
+    private final RegistrationService service = new RegistrationService(repo, waitlist);
 
     @Test
     void cancellingYourOwnRegistrationWorks() {
@@ -142,5 +165,40 @@ class RegistrationServiceCancelTest {
         ApiException error = assertThrows(ApiException.class, () -> service.status(99, STUDENT));
 
         assertEquals("NOT_FOUND", error.getCode());
+    }
+
+    /*
+     * MASON-18: cancelling hands the seat to the waitlist, and status reports your place in line.
+     */
+
+    @Test
+    void cancellingGivesTheFreedSeatToTheWaitlist() {
+        service.cancel(3, STUDENT);
+
+        assertEquals(1, waitlist.fillCalls);
+    }
+
+    @Test
+    void aFailedCancelDoesNotTouchTheWaitlist() {
+        assertThrows(ApiException.class, () -> service.cancel(3, OTHER_STUDENT));
+
+        assertEquals(0, waitlist.fillCalls);
+    }
+
+    @Test
+    void statusShowsYourPlaceOnTheWaitlist() {
+        RegistrationStatus status = service.status(3, OTHER_STUDENT);
+
+        assertFalse(status.registered());
+        assertTrue(status.waitlisted());
+        assertEquals(2, status.waitlistPosition());
+    }
+
+    @Test
+    void statusSaysNotWaitlistedWhenYouAreRegistered() {
+        RegistrationStatus status = service.status(3, STUDENT);
+
+        assertFalse(status.waitlisted());
+        assertNull(status.waitlistPosition());
     }
 }

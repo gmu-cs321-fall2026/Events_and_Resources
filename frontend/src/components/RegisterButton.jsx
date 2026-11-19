@@ -4,10 +4,17 @@
   //   event        = the event being shown (needs id, capacity, registeredCount)
   //   onRegistered = called after registering, so the pop-up adds 1 to the spot count
   //   onCancelled  = called after cancelling, so the pop-up takes 1 away
+  //
+  // MASON-18: when the event is full, the button becomes "Join waitlist".
+  // While waiting it shows "On the waitlist · #2". If a seat opens (someone cancels
+  // or staff raise the capacity) the backend registers the student automatically,
+  // and the next time the pop-up opens it shows "You're registered ✓".
 
 import { useEffect, useState } from "react";
 import { registerForEvent, cancelRegistration, getMyRegistration } from "../api/eventsApi";
+import { joinWaitlist, leaveWaitlist } from "../api/waitlistApi";
 import "./RegisterButton.css";
+import ReminderToggle from "./ReminderToggle";
 
  // ---- State ----
   // checking:   true until the server tells us whether we're registered
@@ -16,6 +23,9 @@ import "./RegisterButton.css";
   // confirming: true while the "Are you sure?" question is showing
   // message:    a short note under the buttons, e.g. "Your registration was cancelled."
   // isError:    true = show the message in red (and announce it as an alert)
+  // remind:     true = "Remind me the day before" is ticked
+  // waitlistPosition: MASON-18. null = not waiting; 1 = next in line for a seat
+  // filledUp:   MASON-18. true once the server said EVENT_FULL, even if our copy of the count is old
 export default function RegisterButton({ event, onRegistered, onCancelled }) { 
   const [checking, setChecking] = useState(true);
   const [registered, setRegistered] = useState(false);
@@ -23,13 +33,23 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState(null);
   const [isError, setIsError] = useState(false);
+  const [waitlistPosition, setWaitlistPosition] = useState(null);
+  const [filledUp, setFilledUp] = useState(false);
+  const [remind, setRemind] = useState(false);
 
-  const isFull = event.capacity > 0 && (event.registeredCount ?? 0) >= event.capacity;
+  const isFull = filledUp || (event.capacity > 0 && (event.registeredCount ?? 0) >= event.capacity);
 
 // Set every message in the same way.
   function showMessage(text, error) {
     setMessage(text);
     setIsError(error);
+  }
+
+  /** Copy the server's answer from GET /events/{id}/register into our state. */
+  function applyStatus(status) {
+    setRegistered(status.registered);
+    setRemind(Boolean(status.remind));
+    setWaitlistPosition(status.waitlisted ? status.waitlistPosition : null);
   }
 
   // ---- When the pop-up opens: "am I already registered?" ----
@@ -42,7 +62,7 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
     let ignore = false;
     getMyRegistration(event.id)
       .then((status) => {
-        if (!ignore) setRegistered(status.registered);
+        if (!ignore) applyStatus(status);
       })
       .catch(() => {
       })
@@ -61,14 +81,70 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
     try {
       await registerForEvent(event.id);
       setRegistered(true);
+      setRemind(false);
       onRegistered();
     } catch (err) {
       if (err.code === "ALREADY_REGISTERED") {
         setRegistered(true);
       } else if (err.code === "EVENT_FULL") {
-        showMessage("Sorry, this event just filled up.", true);
+        setFilledUp(true);
+        showMessage("Sorry, this event just filled up. You can join the waitlist instead.", true);
       } else if (err.status === 401) {
         showMessage("Please log in to register.", true);
+      } else {
+        showMessage(err.message, true);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ---- MASON-18: join the waitlist ----
+  // SPOTS_AVAILABLE = a seat opened since the pop-up loaded, so just register instead.
+  async function handleJoinWaitlist() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const status = await joinWaitlist(event.id);
+      applyStatus(status);
+      showMessage("You're on the waitlist. If a spot opens, you'll be registered automatically.", false);
+    } catch (err) {
+      if (err.code === "SPOTS_AVAILABLE") {
+        setFilledUp(false);
+        setBusy(false);
+        await handleRegister();
+        return;
+      } else if (err.code === "ALREADY_WAITLISTED" || err.code === "ALREADY_REGISTERED") {
+        applyStatus(await getMyRegistration(event.id));
+      } else if (err.status === 401) {
+        showMessage("Please log in to join the waitlist.", true);
+      } else {
+        showMessage(err.message, true);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ---- MASON-18: leave the waitlist ----
+  // NOT_WAITLISTED usually means good news: a seat opened and they were moved in.
+  async function handleLeaveWaitlist() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await leaveWaitlist(event.id);
+      setWaitlistPosition(null);
+      showMessage("You left the waitlist.", false);
+    } catch (err) {
+      if (err.code === "NOT_WAITLISTED") {
+        const status = await getMyRegistration(event.id);
+        applyStatus(status);
+        if (status.registered) {
+          onRegistered();
+          showMessage("Good news: a spot opened and you're registered!", false);
+        }
+      } else if (err.status === 401) {
+        showMessage("Please log in to leave the waitlist.", true);
       } else {
         showMessage(err.message, true);
       }
@@ -109,7 +185,9 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
   //
   // registered: Shows the status, can't be clicked. Only registered events can be cancelled.
   //
-  // not registered: Only show Register button
+  // waitlisted (MASON-18): shows their place in line, plus a "Leave waitlist" link.
+  //
+  // not registered: Register button, or "Join waitlist" when the event is full
   let buttons;
 
   if (checking) {
@@ -158,20 +236,42 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
         >
           Cancel registration
         </button>
+
+        <ReminderToggle eventId={event.id} remind={remind} onChange={setRemind} />
+      </>
+    );
+  } else if (waitlistPosition !== null) {
+    buttons = (
+      <>
+        <button type="button" className="register-button" disabled>
+          On the waitlist · #{waitlistPosition}
+        </button>
+        <p className="waitlist-note">
+          If a spot opens up, you'll be registered automatically.
+        </p>
+        <button type="button" className="cancel-link" onClick={handleLeaveWaitlist} disabled={busy}>
+          {busy ? "Leaving…" : "Leave waitlist"}
+        </button>
+      </>
+    );
+  } else if (isFull) {
+    buttons = (
+      <>
+        <button type="button" className="register-button" onClick={handleJoinWaitlist} disabled={busy}>
+          {busy ? "Joining…" : "Join waitlist"}
+        </button>
+        <p className="waitlist-note">This event is full. Join the waitlist to get the next open spot.</p>
       </>
     );
   } else {
-    let label = "Register";
-    if (busy) label = "Registering…";
-    else if (isFull) label = "Event full";
     buttons = (
       <button
         type="button"
         className="register-button"
         onClick={handleRegister}
-        disabled={busy || isFull}
+        disabled={busy}
       >
-        {label}
+        {busy ? "Registering…" : "Register"}
       </button>
     );
   }

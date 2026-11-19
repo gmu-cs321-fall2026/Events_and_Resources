@@ -200,4 +200,99 @@ class AuthInterceptorTest {
             assertTrue(run(request("DELETE", "/opportunities/2", token)));
         }
     }
+
+    @Test
+    void sessionMeNeedsALogin() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/session/me", null)));
+
+        assertEquals(401, error.getStatus().value());
+    }
+
+    @Test
+    void sessionMeAttachesTheUser() {
+        MockHttpServletRequest request = request("GET", "/session/me", "staff-token");
+
+        assertTrue(run(request));
+        CurrentUser user = (CurrentUser) request.getAttribute(AuthInterceptor.CURRENT_USER);
+        assertEquals(FakeTokenValidator.STAFF_ID, user.id());
+    }
+
+    @Test
+    void settingAReminderNeedsALoginButNotStaff() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("PUT", "/events/3/register/reminder", null)));
+        assertEquals(401, error.getStatus().value());
+
+        assertTrue(run(request("PUT", "/events/3/register/reminder", "student-token")));
+    }
+
+    @Test
+    void remindersListNeedsALogin() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/registrations/reminders", null)));
+
+        assertEquals(401, error.getStatus().value());
+    }
+
+    @Test
+    void studentsCannotReadTheRemindersList() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/registrations/reminders", "student-token")));
+
+        assertEquals(403, error.getStatus().value());
+    }
+
+    @Test
+    void staffAndAdminCanReadTheRemindersList() {
+        for (String token : List.of("staff-token", "admin-token")) {
+            assertTrue(run(request("GET", "/registrations/reminders", token)));
+        }
+    }
+
+    /*
+     * Waitlist (MASON-18 / MASON-19): students join/leave with a login,
+     * only staff/admin can see the line or change the capacity.
+     */
+
+    @Test
+    void joiningTheWaitlistNeedsALogin() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("POST", "/events/3/waitlist", null)));
+
+        assertEquals("UNAUTHORIZED", error.getCode());
+    }
+
+    @Test
+    void studentCanJoinAndLeaveTheWaitlist() {
+        assertTrue(run(request("POST", "/events/3/waitlist", "student-token")));
+        assertTrue(run(request("DELETE", "/events/3/waitlist", "student-token")));
+    }
+
+    @Test
+    void seeingTheWaitlistIsNotPublicEvenThoughItIsAGet() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/events/3/waitlist", null)));
+
+        assertEquals("UNAUTHORIZED", error.getCode());
+    }
+
+    @Test
+    void studentSeeingTheWaitlistOrChangingCapacityIs403() {
+        ApiException seeing = assertThrows(ApiException.class,
+                () -> run(request("GET", "/events/3/waitlist", "student-token")));
+        ApiException changing = assertThrows(ApiException.class,
+                () -> run(request("PUT", "/events/3/capacity", "student-token")));
+
+        assertEquals("FORBIDDEN", seeing.getCode());
+        assertEquals("FORBIDDEN", changing.getCode());
+    }
+
+    @Test
+    void staffAndAdminCanSeeTheWaitlistAndChangeCapacity() {
+        for (String token : List.of("staff-token", "admin-token")) {
+            assertTrue(run(request("GET", "/events/3/waitlist", token)));
+            assertTrue(run(request("PUT", "/events/3/capacity", token)));
+        }
+    }
 }

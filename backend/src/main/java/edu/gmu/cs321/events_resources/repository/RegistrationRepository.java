@@ -1,6 +1,8 @@
 // "This file lives in the repository/ folder." Must match the folder the file is in.
 package edu.gmu.cs321.events_resources.repository;
 
+import java.time.LocalDateTime;
+
 // ---------------------------------------------------------------------------
 // IMPORTS: tell Java where to find each class this file uses.
 // ---------------------------------------------------------------------------
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Repository;
 
 import edu.gmu.cs321.events_resources.model.RegisteredEvent;
 import edu.gmu.cs321.events_resources.model.Registration;
+import edu.gmu.cs321.events_resources.model.DueReminder;
 
 /**
  * RegistrationRepository: the STORAGE layer for registrations.
@@ -92,7 +95,7 @@ public class RegistrationRepository {
                 // "RETURNING ..." = PostgreSQL hands back the row it just inserted,
                 // so we get the new id and created_at without a second query.
                 "INSERT INTO registrations (event_id, user_id) VALUES (?, ?) "
-                        + "RETURNING id, event_id, user_id, created_at",
+                        + "RETURNING id, event_id, user_id, created_at, remind",
                 // A "row mapper" written as a lambda: how to turn the returned row into a Registration.
                 // rs = the row ("result set"), rowNum = which row it is (we don't need it).
                 /*(rs, rowNum) -> new Registration(
@@ -148,7 +151,7 @@ public class RegistrationRepository {
      */
     public Optional<Registration> find(long eventId, UUID userId) {
         List<Registration> rows = jdbc.query(
-                "SELECT id, event_id, user_id, created_at FROM registrations "
+                "SELECT id, event_id, user_id, created_at, remind FROM registrations "
                         + "WHERE event_id = ? AND user_id = ?",
                 REGISTRATION_MAPPER,
                 eventId, userId);
@@ -190,6 +193,58 @@ public class RegistrationRepository {
         return count == null ? 0 : count; // ternary: if null use 0, otherwise use count
     }
 
+    // REMINDERS: We only store who wants a reminder. The Notifications subsystem reads the
+    // list (GET /registrations/reminders) and decides when to send each one.
+
+    /**
+     * Turns this user's reminder for this event on or off.
+     * Returns false if they aren't registered (no row to change).
+     */
+    public boolean setReminder(long eventId, UUID userId, boolean remind) {
+        int rowsChanged = jdbc.update(
+                "UPDATE registrations SET remind = ? WHERE event_id = ? AND user_id = ?",
+                remind, eventId, userId);
+        return rowsChanged == 1;
+    }
+
+    /**
+     * One page of reminders: registrations with the reminder ON, for events that
+     * start between "from" and "until" (inclusive), soonest first.
+     *
+     * (e.event_date + e.event_time) joins the DATE and TIME columns into one TIMESTAMP,
+     * so we can compare it with a moment in time. "from" and "until" are GMU local
+     * times, like the event dates and times we store.
+     * r.id is the tiebreaker, so pages never repeat or skip a row when two events
+     * start at the same minute.
+     */
+    public List<DueReminder> findUpcomingReminders(LocalDateTime from, LocalDateTime until, int limit, int offset) {
+        return jdbc.query(
+                "SELECT r.id, r.user_id, e.id AS event_id, e.event_title, "
+                        + "       to_char(e.event_date, 'YYYY-MM-DD') AS date, "
+                        + "       to_char(e.event_time, 'HH24:MI')    AS time, "
+                        + "       e.location, e.register_link "
+                        + "FROM registrations r "
+                        + "JOIN events e ON e.id = r.event_id "
+                        + "WHERE r.remind = TRUE "
+                        + "  AND (e.event_date + e.event_time) BETWEEN ? AND ? "
+                        + "ORDER BY e.event_date, e.event_time, r.id "
+                        + "LIMIT ? OFFSET ?",
+                DUE_REMINDER_MAPPER,
+                from, until, limit, offset);
+    }
+
+    /** How many reminders are in that window in total. Becomes "totalCount" in the response. */
+    public long countUpcomingReminders(LocalDateTime from, LocalDateTime until) {
+        Long count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM registrations r "
+                        + "JOIN events e ON e.id = r.event_id "
+                        + "WHERE r.remind = TRUE "
+                        + "  AND (e.event_date + e.event_time) BETWEEN ? AND ?",
+                Long.class,
+                from, until);
+        return count == null ? 0 : count;
+    }
+
     // Turns one row of the registrations table into a Registration.
     // Used by insert() and find(). (Moved here from insert() so both share one copy.)
     // A "row mapper" written as a lambda: rs = the row ("result set"),
@@ -198,7 +253,9 @@ public class RegistrationRepository {
             rs.getLong("id"),                      
             rs.getLong("event_id"),
             rs.getObject("user_id", UUID.class),            
-            rs.getTimestamp("created_at").toLocalDateTime());
+            rs.getTimestamp("created_at").toLocalDateTime(),
+            rs.getBoolean("remind"));
+
 
     // Turns one row of the JOIN query above into a RegisteredEvent.
     // "static final" = defined once and reused for every row, every time.
@@ -217,4 +274,14 @@ public class RegistrationRepository {
             rs.getInt("capacity"),
             rs.getInt("registered_count"),
             rs.getString("registered_at")); // the "AS registered_at" column
+
+    private static final RowMapper<DueReminder> DUE_REMINDER_MAPPER = (rs, rowNum) -> new DueReminder(
+            rs.getLong("id"),
+            rs.getObject("user_id", UUID.class),
+            rs.getLong("event_id"),
+            rs.getString("event_title"),
+            rs.getString("date"),
+            rs.getString("time"),
+            rs.getString("location"),
+            rs.getString("register_link"));
 }

@@ -27,12 +27,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * WHICH URLs NEED WHAT (see needsLogin() and needsStaff() below):
  *   GET  /events, GET /events/{id}           public, no token needed
  *   POST /events/{id}/register               any logged-in user
+ *   PUT / events/{id}/register/reminder      any logged-in user, only their own registration
+ *   GET /session/me                          any logged-in user (Who am I?)
+ *   GET  /registrations/reminders            staff/admin only (the Notifications subsystem's list)
  *   GET  /users/{userId}/events/registered   any logged-in user (the service checks it's YOUR list)
  *   POST /events                             staff/admin only
  *   PUT / DELETE /events/{id}                staff/admin only
  *  *   GET  /opportunities, /opportunities/{id} public, no token needed (MASON-13)
  *   POST /opportunities                      staff/admin only
  *   PUT / DELETE /opportunities/{id}         staff/admin only
+ *   POST / DELETE /events/{id}/waitlist      any logged-in user (join / leave, MASON-18)
+ *   GET  /events/{id}/waitlist               staff/admin only (see the line, MASON-19)
+ *   PUT  /events/{id}/capacity               staff/admin only (change capacity, MASON-19)
  */
 @Component // Spring creates one of these; WebConfig asks for it and plugs it in
 public class AuthInterceptor implements HandlerInterceptor {
@@ -101,7 +107,7 @@ public class AuthInterceptor implements HandlerInterceptor {
      * Browsers never attach tokens to it, so it must not require one.
     */
     private boolean needsLogin(String method, String path) {
-        boolean myRegistration = path.matches("/events/\\d+/register/?");
+        boolean myRegistration = path.matches("/events/\\d+/(register|waitlist)/?");
         boolean readingEvents = method.equals("GET") && path.startsWith("/events") && !myRegistration;
         boolean readingJobs = method.equals("GET") && path.startsWith("/opportunities");
         boolean browserPreCheck = method.equals("OPTIONS");
@@ -120,6 +126,11 @@ public class AuthInterceptor implements HandlerInterceptor {
         boolean createJob = method.equals("POST") && path.matches("/opportunities/?");
         boolean changeJob = (method.equals("PUT") || method.equals("DELETE"))
                 && path.matches("/opportunities/\\d+/?");
-        return createEvent || changeEvent || createJob || changeJob;
+        boolean readReminders = path.matches("/registrations/reminders/?");
+        boolean seeWaitlist = method.equals("GET") && path.matches("/events/\\d+/waitlist/?");
+        boolean changeCapacity = method.equals("PUT") && path.matches("/events/\\d+/capacity/?");
+
+        return createEvent || changeEvent || createJob || changeJob || readReminders
+                || seeWaitlist || changeCapacity;
     }
 }

@@ -1,4 +1,4 @@
-package edu.gmu.cs321.events_resources;
+package edu.gmu.cs321.events_resources.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -9,7 +9,6 @@ import edu.gmu.cs321.events_resources.common.ApiException;
 import edu.gmu.cs321.events_resources.common.PagedResponse;
 import edu.gmu.cs321.events_resources.model.Opportunity;
 import edu.gmu.cs321.events_resources.repository.OpportunityRepository;
-import edu.gmu.cs321.events_resources.service.OpportunityService;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
