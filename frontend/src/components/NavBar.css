@@ -1,0 +1,80 @@
+/**
+ * NavBar.css (MASON-50): the top bar. Same GMU green and gold as the Resources and Jobs pages.
+ * position: sticky keeps it at the top while the page scrolls.
+ */
+
+.site-header {
+	position: sticky;
+	top: 0;
+	z-index: 500;
+	/* above the page, below pop-ups (1000) */
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px 24px;
+	padding: 12px 24px;
+	background: #0b5d3b;
+	border-bottom: 4px solid #f2b705;
+	font-family: Inter, system-ui, sans-serif;
+	text-align: left;
+}
+
+.site-header__brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: #fff;
+	font: 700 18px "Space Grotesk", system-ui, sans-serif;
+	text-decoration: none;
+}
+
+.site-header__logo {
+	height: 36px;
+	width: auto;
+	background: #fff;
+	border-radius: 6px;
+	padding: 2px 4px;
+}
+
+.site-nav {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.site-nav__link {
+	display: inline-flex;
+	align-items: center;
+	min-height: 40px;
+	padding: 0 14px;
+	border-radius: 10px;
+	color: #e8f1ec;
+	font-size: 15px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.site-nav__link:hover {
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+}
+
+.site-nav__link:focus-visible,
+.site-header__brand:focus-visible {
+	outline: 2px solid #f2b705;
+	outline-offset: 2px;
+}
+
+.site-nav__link--on {
+	background: #f2b705;
+	color: #18231d;
+}
+
+.site-nav__link--on:hover {
+	background: #f2b705;
+	color: #18231d;
+}

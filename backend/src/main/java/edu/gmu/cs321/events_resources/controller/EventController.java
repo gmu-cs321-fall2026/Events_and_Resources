@@ -16,9 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * ENDPOINTS
- *   GET  /events        one page of events, with optional filters   -> 200   (public, no token)
- *   GET  /events/{id}   one event                                   -> 200 / 404 (public, no token)
- *   POST /events        create an event                             -> 201   (staff only)
+ * GET /events one page of events, with optional filters -> 200 (public, no token)
+ * and optional keyword search ?q= (MASON-10)
+ * GET /events/{id} one event -> 200 / 404 (public, no token)
+ * POST /events create an event -> 201 (staff only)
  *
  * AuthInterceptor already lets every GET /events... through without a token,
  * so there's no auth code here.
@@ -34,7 +35,7 @@ public class EventController {
     }
 
     /**
-     * GET /events?page=&pageSize=&from=&to=&category=&audience=&format=
+     * GET /events?page=&pageSize=&from=&to=&category=&audience=&format=&q=
      *
      * @RequestParam(required = false) = "this one can be left out of the URL; then it's null".
      * defaultValue = what to use when it's left out (page 1, 20 per page).
@@ -45,6 +46,7 @@ public class EventController {
      *   /events?category=Workshop&format=Virtual       virtual workshops
      *   /events?from=2026-10-27&to=2026-11-02          events that week
      *   /events?audience=CS%20Majors                   events for CS Majors (%20 = a space in a URL)
+     *   /events?q=resume                        events with "resume" in the title, host, location, audience or category
      */
     @GetMapping
     public PagedResponse<Event> listEvents(                            // returning the object directly = 200 OK
@@ -54,9 +56,10 @@ public class EventController {
             @RequestParam(required = false) String to,                 // YYYY-MM-DD, inclusive
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String audience,
-            @RequestParam(required = false) String format) {
+            @RequestParam(required = false) String format,
+            @RequestParam(required = false) String q) {
 
-        return eventService.listEvents(page, pageSize, from, to, category, audience, format);
+        return eventService.listEvents(page, pageSize, from, to, category, audience, format, q);
     }
 
     /**

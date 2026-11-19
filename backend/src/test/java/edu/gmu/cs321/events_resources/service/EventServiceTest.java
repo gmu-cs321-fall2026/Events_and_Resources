@@ -179,7 +179,7 @@ class EventServiceTest {
 
     @Test
     void noFiltersMeansEveryFieldIsNull() {
-        PagedResponse<Event> result = service.listEvents(1, 20, null, null, null, null, null);
+        PagedResponse<Event> result = service.listEvents(1, 20, null, null, null, null, null, null);
 
         assertEquals(EventFilter.none(), repository.lastFilter);   // records compare field by field
         assertEquals(1, result.items().size());
@@ -188,7 +188,7 @@ class EventServiceTest {
 
     @Test
     void filtersArePassedToTheRepositoryCleaned() {
-        service.listEvents(1, 20, "2026-10-27", "2026-11-02", "Workshop", "  CS Majors ", "Virtual");
+        service.listEvents(1, 20, "2026-10-27", "2026-11-02", "Workshop", "  CS Majors ", "Virtual", null);
 
         EventFilter f = repository.lastFilter;
         assertEquals(LocalDate.of(2026, 10, 27), f.from());
@@ -201,14 +201,14 @@ class EventServiceTest {
     @Test
     void blankFiltersAreIgnored() {
         // ?category=&format= (empty values) should act like they weren't sent.
-        service.listEvents(1, 20, "", " ", "", "", "");
+        service.listEvents(1, 20, "", " ", "", "", "", null);
 
         assertEquals(EventFilter.none(), repository.lastFilter);
     }
 
     @Test
     void pageTurnsIntoLimitAndOffset() {
-        service.listEvents(3, 10, null, null, null, null, null);
+        service.listEvents(3, 10, null, null, null, null, null, null);
 
         assertEquals(10, repository.lastLimit);                      // 10 per page
         assertEquals(20, repository.lastOffset);                     // page 3 skips the first 20
@@ -217,7 +217,7 @@ class EventServiceTest {
     @Test
     void badFiltersAreAllReportedAtOnce() {
         ApiException e = assertThrows(ApiException.class,
-                () -> service.listEvents(1, 20, "2026-13-01", "nope", "Party", null, "in person"));
+                () -> service.listEvents(1, 20, "2026-13-01", "nope", "Party", null, "in person", null));
 
         assertEquals(HttpStatus.BAD_REQUEST, e.getStatus());
         assertEquals("VALIDATION_ERROR", e.getCode());
@@ -231,7 +231,7 @@ class EventServiceTest {
     @Test
     void fromAfterToIsRejected() {
         ApiException e = assertThrows(ApiException.class,
-                () -> service.listEvents(1, 20, "2026-11-05", "2026-11-01", null, null, null));
+                () -> service.listEvents(1, 20, "2026-11-05", "2026-11-01", null, null, null, null));
 
         assertTrue(e.getDetail().contains("to: must be on or after from"));
     }
@@ -239,9 +239,38 @@ class EventServiceTest {
     @Test
     void pageSizeOver50IsRejected() {
         ApiException e = assertThrows(ApiException.class,
-                () -> service.listEvents(1, 51, null, null, null, null, null));
+                () -> service.listEvents(1, 51, null, null, null, null, null, null));
 
         assertEquals("VALIDATION_ERROR", e.getCode());
+    }
+
+    /*
+     * Keyword search ?q= (MASON-10)
+     */
+
+    @Test
+    void keywordIsTrimmedAndPassedToTheRepository() {
+        service.listEvents(1, 20, null, null, null, null, null, "  resume ");
+
+        assertEquals("resume", repository.lastFilter.q());
+    }
+
+    @Test
+    void blankKeywordIsIgnored() {
+        service.listEvents(1, 20, null, null, null, null, null, "   ");
+
+        assertEquals(EventFilter.none(), repository.lastFilter);
+    }
+
+    @Test
+    void keywordOver100CharactersIsRejected() {
+        String tooLong = "a".repeat(101);
+
+        ApiException e = assertThrows(ApiException.class,
+                () -> service.listEvents(1, 20, null, null, null, null, null, tooLong));
+
+        assertEquals("VALIDATION_ERROR", e.getCode());
+        assertTrue(e.getDetail().contains("q:"));
     }
 
     // =======================================================================
