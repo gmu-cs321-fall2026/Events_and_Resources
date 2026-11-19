@@ -45,9 +45,10 @@ COPY frontend/ .
 # Build-time settings for Vite. ARG = a value you can pass with
 #   docker build --build-arg VITE_DEV_TOKEN=staff-token -t events-resources .
 # Vite reads VITE_* variables while building and bakes them into the JS.
-#   VITE_DEV_TOKEN: which test token the page uses (student by default;
-#                   use staff-token to demo creating events)
-ARG VITE_DEV_TOKEN=student-token
+#   VITE_DEV_TOKEN: optional. Empty (the default) = the page starts logged out and
+#                   you use the login form. Set a test token (fake mode only) to
+#                   start already logged in, e.g. staff-token to demo creating events.
+ARG VITE_DEV_TOKEN=
 ENV VITE_DEV_TOKEN=${VITE_DEV_TOKEN}
 
 # vite build = bundle the app into frontend/dist/ (HTML, JS, CSS files).

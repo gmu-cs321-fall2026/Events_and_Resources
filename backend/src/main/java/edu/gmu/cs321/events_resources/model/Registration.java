@@ -22,6 +22,11 @@ public record Registration(
         long id,                 // the registration's own id (set by the database)
         long eventId,            // which event         -> events.id
         UUID userId,             // which user          -> the user's id from Shared Core
-        LocalDateTime createdAt  // when they registered (set by the database: DEFAULT now())
+        LocalDateTime createdAt,  // when they registered (set by the database: DEFAULT now())
+        boolean remind          // send a reminder the day before? (false until they turn it on)
 ) {
+        /** A registration with its reminder off, e.g. a brand-new one. Keeps older code and tests working. */
+    public Registration(long id, long eventId, UUID userId, LocalDateTime createdAt) {
+        this(id, eventId, userId, createdAt, false);
+    }
 }

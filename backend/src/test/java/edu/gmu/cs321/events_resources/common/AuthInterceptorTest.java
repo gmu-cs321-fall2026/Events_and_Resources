@@ -200,4 +200,53 @@ class AuthInterceptorTest {
             assertTrue(run(request("DELETE", "/opportunities/2", token)));
         }
     }
+
+    @Test
+    void sessionMeNeedsALogin() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/session/me", null)));
+
+        assertEquals(401, error.getStatus().value());
+    }
+
+    @Test
+    void sessionMeAttachesTheUser() {
+        MockHttpServletRequest request = request("GET", "/session/me", "staff-token");
+
+        assertTrue(run(request));
+        CurrentUser user = (CurrentUser) request.getAttribute(AuthInterceptor.CURRENT_USER);
+        assertEquals(FakeTokenValidator.STAFF_ID, user.id());
+    }
+
+    @Test
+    void settingAReminderNeedsALoginButNotStaff() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("PUT", "/events/3/register/reminder", null)));
+        assertEquals(401, error.getStatus().value());
+
+        assertTrue(run(request("PUT", "/events/3/register/reminder", "student-token")));
+    }
+
+    @Test
+    void remindersListNeedsALogin() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/registrations/reminders", null)));
+
+        assertEquals(401, error.getStatus().value());
+    }
+
+    @Test
+    void studentsCannotReadTheRemindersList() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("GET", "/registrations/reminders", "student-token")));
+
+        assertEquals(403, error.getStatus().value());
+    }
+
+    @Test
+    void staffAndAdminCanReadTheRemindersList() {
+        for (String token : List.of("staff-token", "admin-token")) {
+            assertTrue(run(request("GET", "/registrations/reminders", token)));
+        }
+    }
 }
