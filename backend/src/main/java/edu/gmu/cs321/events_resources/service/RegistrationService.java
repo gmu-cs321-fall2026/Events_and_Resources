@@ -79,28 +79,42 @@ public class RegistrationService {
      */
     private final WaitlistService waitlist;
 
-    // Spring calls this at startup and passes in the RegistrationRepository and WaitlistService.
-    // @Autowired tells Spring to use THIS constructor, since there are several.
+    /**
+     * Sends the "you're registered" message through Notifications after a registration is saved.
+     * null only in tests that don't check confirmations.
+     */
+    private final RegistrationConfirmation confirmation;
+
+    // Spring calls this at startup and passes in the repository, the WaitlistService and the
+    // RegistrationConfirmation. @Autowired tells Spring to use THIS constructor, since there are several.
     @Autowired
-    public RegistrationService(RegistrationRepository registrations, WaitlistService waitlist) {
-        this(registrations, waitlist, Clock.system(GMU_TIME));
+    public RegistrationService(RegistrationRepository registrations, WaitlistService waitlist,
+                               RegistrationConfirmation confirmation) {
+        this(registrations, waitlist, confirmation, Clock.system(GMU_TIME));
     }
 
-    /** For tests: a fixed Clock makes "now" the same on every run. */
-    RegistrationService(RegistrationRepository registrations, WaitlistService waitlist, Clock clock) {
+     /** For tests: a fixed Clock makes "now" the same on every run. */
+    RegistrationService(RegistrationRepository registrations, WaitlistService waitlist,
+                        RegistrationConfirmation confirmation, Clock clock) {
         this.registrations = registrations;
         this.waitlist = waitlist;
+        this.confirmation = confirmation;
         this.clock = clock;
+    }
+
+    /** For tests that use the waitlist but don't check confirmations (RegistrationServiceCancelTest). */
+    RegistrationService(RegistrationRepository registrations, WaitlistService waitlist) {
+        this(registrations, waitlist, null, Clock.system(GMU_TIME));
     }
 
     /** For tests that don't use the waitlist (RegistrationServiceReminderTest): nobody is ever waiting. */
     RegistrationService(RegistrationRepository registrations) {
-        this(registrations, null, Clock.system(GMU_TIME));
+        this(registrations, null, null, Clock.system(GMU_TIME));
     }
 
     /** For tests that don't use the waitlist (RegistrationServiceUpcomingRemindersTest), with a fixed Clock. */
     RegistrationService(RegistrationRepository registrations, Clock clock) {
-        this(registrations, null, clock);
+        this(registrations, null, null, clock);
     }
 
     /**
@@ -135,14 +149,20 @@ public class RegistrationService {
         }
 
         // Step 4: save the registration and return it (with its new id and timestamp).
+        // Rare: throws exception when the same student double-clicked, and both requests passed Rule 2 at the
+        // same moment. The table's UNIQUE (event_id, user_id) rule stopped the second one.
+        // Throwing here also undoes its +1 seat (because of @Transactional).
+        Registration saved;
         try {
-            return registrations.insert(eventId, user.id());
+            saved = registrations.insert(eventId, user.id());
         } catch (DuplicateKeyException e) {
-            // Rare: the same student double-clicked, and both requests passed Rule 2 at the
-            // same moment. The table's UNIQUE (event_id, user_id) rule stopped the second one.
-            // Throwing here also undoes its +1 seat (because of @Transactional).
             throw ApiException.conflict("ALREADY_REGISTERED", "You're already registered for this event");
         }
+
+        if (confirmation != null)
+            confirmation.sendAfterCommit(eventId, user.id());
+        
+        return saved;
     }
 
     /**

@@ -9,6 +9,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import edu.gmu.cs321.events_resources.common.ApiException;
 import edu.gmu.cs321.events_resources.model.CapacityRequest;
@@ -41,11 +42,20 @@ public class WaitlistService {
 
     private final WaitlistRepository waitlist;
     private final RegistrationRepository registrations;
+    private final RegistrationConfirmation confirmation;
 
-    public WaitlistService(WaitlistRepository waitlist, RegistrationRepository registrations) {
+    @Autowired
+    public WaitlistService(WaitlistRepository waitlist, RegistrationRepository registrations, RegistrationConfirmation confirmation) {
         this.waitlist = waitlist;
         this.registrations = registrations;
+        this.confirmation = confirmation;
     }
+
+     /** For tests that don't check confirmations. */
+    public WaitlistService(WaitlistRepository waitlist, RegistrationRepository registrations) {
+        this(waitlist, registrations, null);
+    }
+
     /**
      * Puts the logged-in student at the end of the waitlist. The rules, in order: FOR STUDENTS
      *   1. The event must exist                 -> otherwise 404 NOT_FOUND
@@ -170,8 +180,7 @@ public class WaitlistService {
      * It must run inside their transaction: lockSeats keeps the event row locked,
      * so a brand-new registration can't grab the open seat ahead of the line.
      *
-     * TODO (MASON-24): once the Notifications client exists, send each accepted
-     * student a "You got a spot" message here.
+     * Once the Notifications client exists, send each accepted, student a "You got a spot" message here.
      */
     @Transactional
     public List<UUID> fillOpenSeats(long eventId) {
@@ -192,6 +201,9 @@ public class WaitlistService {
             if (waitlist.moveToRegistrations(eventId, student)) {
                 accepted.add(student);
                 open--;
+
+                if (confirmation != null)
+                    confirmation.sendAfterCommit(eventId, student);
             }
         }
         return accepted;
