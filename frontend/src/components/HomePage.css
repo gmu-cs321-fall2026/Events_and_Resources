@@ -1,0 +1,266 @@
+/**
+ * HomePage.css (MASON-50): the landing page. Same GMU green and gold, fonts and card
+ * style as the Resources and Jobs pages, so Home looks like part of the same site.
+ */
+
+.home {
+	--green: #0b5d3b;
+	--green-dark: #073d27;
+	--gold: #f2b705;
+	--ink: #18231d;
+	--muted: #4a5650;
+	--line: #e4e1d6;
+
+	font-family: Inter, system-ui, sans-serif;
+	color: var(--ink);
+	text-align: left;
+	padding-bottom: 48px;
+}
+
+.home h1,
+.home h2 {
+	font-family: "Space Grotesk", system-ui, sans-serif;
+	color: var(--ink);
+}
+
+/* ---------- hero ---------- */
+
+.home-hero {
+	background: var(--green);
+	color: #fff;
+	border-radius: 0 0 24px 24px;
+	padding: 44px 32px 32px;
+}
+
+.home-hero__eyebrow {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--gold);
+}
+
+.home .home-hero__title {
+	margin: 10px 0 12px;
+	max-width: 720px;
+	font-size: 48px;
+	line-height: 1.05;
+	letter-spacing: -1px;
+	color: #fff;
+}
+
+.home-hero__lead {
+	max-width: 620px;
+	font-size: 17px;
+	line-height: 1.5;
+	color: #e3eee8;
+}
+
+.home-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 14px;
+	margin-top: 28px;
+}
+
+.home-tile {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 18px;
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.1);
+	border: 1.5px solid rgba(255, 255, 255, 0.25);
+	color: #fff;
+	text-decoration: none;
+}
+
+.home-tile:hover,
+.home-tile:focus-visible {
+	background: var(--gold);
+	border-color: var(--gold);
+	color: var(--ink);
+}
+
+.home-tile__title {
+	font: 700 19px "Space Grotesk", system-ui, sans-serif;
+}
+
+.home-tile__text {
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+/* ---------- search ---------- */
+
+.home-search {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	max-width: 720px;
+	margin-top: 24px;
+	padding: 0 16px;
+	background: #fff;
+	border-radius: 12px;
+	color: var(--muted);
+}
+
+.home-search:focus-within {
+	outline: 3px solid var(--gold);
+	outline-offset: 2px;
+}
+
+.home-search input {
+	flex: 1;
+	min-height: 54px;
+	border: 0;
+	outline: none;
+	background: transparent;
+	font: 400 17px Inter, sans-serif;
+	color: var(--ink);
+}
+
+.home-nothing {
+	margin: 28px 24px 0;
+	padding: 16px 18px;
+	border: 1px dashed #cfcaba;
+	border-radius: 12px;
+	background: #fff;
+	color: var(--muted);
+}
+
+.home-nothing a {
+	color: var(--green);
+	font-weight: 600;
+}
+
+/* ---------- sections ---------- */
+
+.home-section {
+	padding: 32px 24px 0;
+}
+
+.home-section__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 16px;
+}
+
+.home-section__head h2 {
+	margin: 0;
+	font-size: 26px;
+}
+
+.home-section__all {
+	color: var(--green);
+	font-weight: 600;
+	font-size: 15px;
+	text-decoration: none;
+}
+
+.home-section__all:hover {
+	text-decoration: underline;
+}
+
+.home-section__note {
+	color: var(--muted);
+	font-size: 15px;
+}
+
+.home-section__note--error {
+	color: #9b1c1c;
+}
+
+/* ---------- events ---------- */
+
+.home-events {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	gap: 14px;
+}
+
+.home-event {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	gap: 14px;
+	padding: 16px;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+	background: #fff;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	cursor: pointer;
+}
+
+.home-event:hover,
+.home-event:focus-visible {
+	border-color: var(--green);
+	box-shadow: 0 4px 14px rgba(11, 93, 59, 0.12);
+}
+
+.home-event__date {
+	flex: none;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 56px;
+	height: 64px;
+	border-radius: 10px;
+	background: #edf3ef;
+	color: var(--green-dark);
+}
+
+.home-event__month {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.home-event__day {
+	font: 700 24px "Space Grotesk", system-ui, sans-serif;
+}
+
+.home-event__text {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.home-event__category {
+	font-size: 12px;
+	font-weight: 600;
+	color: #8a6a00;
+}
+
+.home-event__title {
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.home-event__when {
+	font-size: 13px;
+	color: var(--muted);
+}
+
+/* ---------- resources ---------- */
+
+.home-resources {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	gap: 16px;
+}
+
+@media (max-width: 600px) {
+	.home .home-hero__title {
+		font-size: 34px;
+	}
+}
