@@ -13,7 +13,7 @@
  * which now also returns { waitlisted, waitlistPosition }.
  *
  * Kept in its own file (like myEventsApi.js) so it can't collide with teammates' edits to eventsApi.js.
- * It reuses eventsApi's request(), so the same login token and error format apply.
+ * It reuses eventsApi's request(), so the same login (authHeaders) and error format apply.
  */
 import { request } from "./eventsApi";
 

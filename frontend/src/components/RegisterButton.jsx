@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { registerForEvent, cancelRegistration, getMyRegistration } from "../api/eventsApi";
 import { joinWaitlist, leaveWaitlist } from "../api/waitlistApi";
 import "./RegisterButton.css";
+import ReminderToggle from "./ReminderToggle";
 
  // ---- State ----
   // checking:   true until the server tells us whether we're registered
@@ -22,6 +23,7 @@ import "./RegisterButton.css";
   // confirming: true while the "Are you sure?" question is showing
   // message:    a short note under the buttons, e.g. "Your registration was cancelled."
   // isError:    true = show the message in red (and announce it as an alert)
+  // remind:     true = "Remind me the day before" is ticked
   // waitlistPosition: MASON-18. null = not waiting; 1 = next in line for a seat
   // filledUp:   MASON-18. true once the server said EVENT_FULL, even if our copy of the count is old
 export default function RegisterButton({ event, onRegistered, onCancelled }) { 
@@ -33,6 +35,7 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
   const [isError, setIsError] = useState(false);
   const [waitlistPosition, setWaitlistPosition] = useState(null);
   const [filledUp, setFilledUp] = useState(false);
+  const [remind, setRemind] = useState(false);
 
   const isFull = filledUp || (event.capacity > 0 && (event.registeredCount ?? 0) >= event.capacity);
 
@@ -45,6 +48,7 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
   /** Copy the server's answer from GET /events/{id}/register into our state. */
   function applyStatus(status) {
     setRegistered(status.registered);
+    setRemind(Boolean(status.remind));
     setWaitlistPosition(status.waitlisted ? status.waitlistPosition : null);
   }
 
@@ -77,6 +81,7 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
     try {
       await registerForEvent(event.id);
       setRegistered(true);
+      setRemind(false);
       onRegistered();
     } catch (err) {
       if (err.code === "ALREADY_REGISTERED") {
@@ -231,6 +236,8 @@ export default function RegisterButton({ event, onRegistered, onCancelled }) {
         >
           Cancel registration
         </button>
+
+        <ReminderToggle eventId={event.id} remind={remind} onChange={setRemind} />
       </>
     );
   } else if (waitlistPosition !== null) {

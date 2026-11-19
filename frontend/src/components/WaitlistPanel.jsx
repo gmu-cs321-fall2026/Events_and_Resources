@@ -6,8 +6,8 @@
  * off the waitlist into those seats automatically, first come first served.
  * Example: 30 seats, 30 registered, 1 waiting -> set capacity to 35 -> that 1 person is registered.
  *
- * Only EventDetailModal shows this, and only when IS_STAFF is true (VITE_DEV_TOKEN=staff-token
- * or admin-token). The backend checks the role on every request too, so hiding it is not the
+ * Only EventDetailModal shows this, and only when useAuth().isStaff is true (logged in as
+ * staff or admin). The backend checks the role on every request too, so hiding it is not the
  * only protection.
  *
  * Props:

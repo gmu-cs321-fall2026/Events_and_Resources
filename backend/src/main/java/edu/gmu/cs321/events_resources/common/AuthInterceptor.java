@@ -27,6 +27,9 @@ import jakarta.servlet.http.HttpServletResponse;
  * WHICH URLs NEED WHAT (see needsLogin() and needsStaff() below):
  *   GET  /events, GET /events/{id}           public, no token needed
  *   POST /events/{id}/register               any logged-in user
+ *   PUT / events/{id}/register/reminder      any logged-in user, only their own registration
+ *   GET /session/me                          any logged-in user (Who am I?)
+ *   GET  /registrations/reminders            staff/admin only (the Notifications subsystem's list)
  *   GET  /users/{userId}/events/registered   any logged-in user (the service checks it's YOUR list)
  *   POST /events                             staff/admin only
  *   PUT / DELETE /events/{id}                staff/admin only
@@ -123,8 +126,11 @@ public class AuthInterceptor implements HandlerInterceptor {
         boolean createJob = method.equals("POST") && path.matches("/opportunities/?");
         boolean changeJob = (method.equals("PUT") || method.equals("DELETE"))
                 && path.matches("/opportunities/\\d+/?");
+        boolean readReminders = path.matches("/registrations/reminders/?");
         boolean seeWaitlist = method.equals("GET") && path.matches("/events/\\d+/waitlist/?");
         boolean changeCapacity = method.equals("PUT") && path.matches("/events/\\d+/capacity/?");
-        return createEvent || changeEvent || createJob || changeJob || seeWaitlist || changeCapacity;
+
+        return createEvent || changeEvent || createJob || changeJob || readReminders
+                || seeWaitlist || changeCapacity;
     }
 }

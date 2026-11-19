@@ -1,5 +1,5 @@
 /**
- * opportunitiesApi.js (MASON-13 Post jobs): the ONE place the frontend talks to
+ * opportunitiesApi.js (Post jobs): the ONE place the frontend talks to
  * the backend about job and internship postings.
  *
  *   getOpportunities({ q, type, page, pageSize })  GET    /opportunities      -> { items, page, pageSize, totalCount }
@@ -12,8 +12,9 @@
  * Errors are thrown as an Error with .status and .code from our {"error","code","detail"} format.
  */
 
+import { authHeaders, handleUnauthorized } from "./auth";
 const BASE_URL = import.meta.env.PROD ? "" : "/api";
-const AUTH_TOKEN = import.meta.env.VITE_DEV_TOKEN || "student-token";
+//const AUTH_TOKEN = import.meta.env.VITE_DEV_TOKEN || "student-token";
 
 /** The allowed job types. Same list as OpportunityService.TYPES on the backend. */
 export const JOB_TYPES = ["Internship", "Full-time", "On-campus"];
@@ -24,7 +25,8 @@ export const JOB_TYPES = ["Internship", "Full-time", "On-campus"];
  * the backend still checks the role on every request, so hiding a button is
  * never the only protection.
  */
-export const IS_STAFF = ["staff-token", "admin-token"].includes(AUTH_TOKEN);
+//Staff-only buttons: pages ask useAuth().isStaff (the logged-in user's real roles), instead of the old IS_STAFF check on the test token's name
+//export const IS_STAFF = ["staff-token", "admin-token"].includes(AUTH_TOKEN);
 
 /**
  * Sends one request and returns the JSON body (or null for an empty body, like DELETE's 204).
@@ -35,7 +37,7 @@ async function request(path, options = {}) {
 	try {
 		response = await fetch(BASE_URL + path, {
 			...options,
-			headers: { ...options.headers, Authorization: `Bearer ${AUTH_TOKEN}` },
+			headers: { ...options.headers, ...authHeaders() },
 		});
 	} catch {
 		throw new Error("Can't reach the server. Is the backend running?");
@@ -50,6 +52,7 @@ async function request(path, options = {}) {
 	}
 
 	if (!response.ok) {
+		if (response.status === 401) handleUnauthorized();
 		const message =
 			body?.detail ||
 			body?.error ||

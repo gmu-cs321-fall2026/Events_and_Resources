@@ -33,3 +33,9 @@ Finish MASON-18 and MASON-19 today. Example to support: an event has 30 seats an
 - `GET /events/{id}/waitlist` isn't paginated: one event's waitlist is short, and staff need the whole line in order.
 - Notifications ("You got a spot") are left as a TODO in `fillOpenSeats` until the MASON-24 Notifications client exists.
 - Mock mode (`VITE_USE_MOCK=true`) doesn't support the waitlist; the buttons show a message saying it needs the real backend.
+
+## Follow-up (Nov 19): merging with main after PR #32 (login + reminders)
+- **Asked:** resolve the PR's merge conflicts with Trang's login/reminder work.
+- **Produced:** kept both sides everywhere. `RegistrationStatus` now has `remind` AND `waitlisted`/`waitlistPosition`; `RegistrationService` keeps the Clock (reminders) and the WaitlistService; AuthInterceptor keeps the reminders rule and the waitlist rules; RegisterButton keeps the reminder checkbox and the waitlist states.
+- **Changed:** `EventDetailModal` used `IS_STAFF`, which PR #32 removed; it now uses `useAuth().isStaff` like the rest of the app.
+- **Rejected:** editing Trang's reminder tests to pass a WaitlistService. Instead RegistrationService keeps package-private constructors without a waitlist for those tests, so her files are untouched.

@@ -1,4 +1,4 @@
-package edu.gmu.cs321.events_resources;
+package edu.gmu.cs321.events_resources.service;
 
 import org.junit.jupiter.api.Test;
 // Static imports = use assertEquals(...) instead of Assertions.assertEquals(...).
@@ -22,7 +22,6 @@ import edu.gmu.cs321.events_resources.common.PagedResponse;
 import edu.gmu.cs321.events_resources.model.Event;
 import edu.gmu.cs321.events_resources.model.EventFilter;
 import edu.gmu.cs321.events_resources.repository.EventRepository;
-import edu.gmu.cs321.events_resources.service.EventService; 
 
 /**
  * Unit tests for EventService: the POST /events rules from Interface Contract v3.

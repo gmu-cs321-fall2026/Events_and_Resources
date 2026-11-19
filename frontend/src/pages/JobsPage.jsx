@@ -1,8 +1,8 @@
 /**
- * JobsPage (MASON-13 Post jobs): the jobs & internships bulletin board.
+ * JobsPage: the jobs & internships bulletin board.
  *
  * Students: search and filter open postings, open one as a pop-up, and apply on the
- * employer's site. Staff (VITE_DEV_TOKEN=staff-token): also post, edit and delete.
+ * employer's site. Staff/Admin (logged in): also post, edit and delete.
  * Only postings whose deadline hasn't passed are shown (GET /opportunities default).
  *
  * Props:
@@ -16,13 +16,15 @@
  *   selectedJobId    = the posting whose pop-up is open, or null
  */
 import { useEffect, useState } from "react";
-import { IS_STAFF, JOB_TYPES, getOpportunities } from "../api/opportunitiesApi";
+import { JOB_TYPES, getOpportunities } from "../api/opportunitiesApi";
 import JobCard from "../components/JobCard";
 import JobDetailModal from "../components/JobDetailModal";
+import { useAuth } from "../auth/useAuth";
 import JobForm from "../components/JobForm";
 import "./JobsPage.css";
 
 export default function JobsPage({ onChanged }) {
+	const { isStaff } = useAuth();
 	const [query, setQuery] = useState("");
 	const [type, setType] = useState("");
 	const [reloadKey, setReloadKey] = useState(0);
@@ -64,12 +66,12 @@ export default function JobsPage({ onChanged }) {
 					<span className="jobs-page__eyebrow">Jobs &amp; internships</span>
 					<h1 id="jobs-page-title">Opportunities posted by Career Services</h1>
 				</div>
-				{IS_STAFF && !showForm && (
+				{isStaff && !showForm && (
 					<button type="button" className="job-button" onClick={() => setShowForm(true)}>+ Post a job</button>
 				)}
 			</div>
 
-			{IS_STAFF && showForm && (
+			{isStaff && showForm && (
 				<div className="jobs-page__form">
 					<JobForm
 						onSaved={() => {

@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { getEventById } from "../api/eventsApi";
 import RegisterButton from "./RegisterButton";
 import WaitlistPanel from "./WaitlistPanel";
-import { IS_STAFF } from "../api/opportunitiesApi";
+import { useAuth } from "../auth/useAuth";
 import "./EventDetailModal.css";
 
 
@@ -36,6 +36,8 @@ function formatTime(time) {
 export default function EventDetailModal({ eventId, onClose }) {
   // event = the details once they arrive. null = still loading.
   const [event, setEvent] = useState(null);
+  // MASON-19: staff/admin (from the real login) see the waitlist box.
+  const { isStaff } = useAuth();
   const [error, setError] = useState(null);
 
   // Effect 1: load the event when the pop-up opens.
@@ -134,7 +136,7 @@ export default function EventDetailModal({ eventId, onClose }) {
 
         {/* MASON-19: staff/admin see the waitlist and can change the capacity.
             Only for limited events: an unlimited event (capacity 0) never has a waitlist. */}
-        {IS_STAFF && event.capacity > 0 && (
+        {isStaff && event.capacity > 0 && (
           <WaitlistPanel
             event={event}
             onCapacityChanged={(seats) => setEvent((e) => ({ ...e, ...seats }))}
