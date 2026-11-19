@@ -83,6 +83,20 @@ CREATE TABLE IF NOT EXISTS registrations (
 -- ADD COLUMN IF NOT EXISTS updates databases that already have the table: no reset needed.
 ALTER TABLE registrations ADD COLUMN IF NOT EXISTS remind BOOLEAN NOT NULL DEFAULT FALSE;
 -- ---------------------------------------------------------------------------
+-- waitlist (MASON-18 / MASON-19): one row per "student X is waiting for a seat at event Y".
+-- Line order = id order: the smallest id has waited longest and gets the next open seat.
+-- When a seat opens (someone cancels, or staff raise the capacity) the first person in
+-- line is moved from this table into registrations automatically.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS waitlist (
+    id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    event_id   BIGINT    NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id    UUID      NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    UNIQUE (event_id, user_id)                -- the same student can't wait in line twice
+);
+
+-- ---------------------------------------------------------------------------
 -- Resources: one row per career resource.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS resource (
