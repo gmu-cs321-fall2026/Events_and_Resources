@@ -6,41 +6,44 @@ The discovery layer of the platform: students find upcoming career fairs, worksh
  
 📘 **Full documentation is in the** [**Wiki**](../../wiki): architecture, interface contract, sprint plans, and acceptance criteria.
  
-📄 **Current interface contract:** [**Interface Contract v6**](../../wiki/Interface-Contract-v6) (updated 2026-11-10)
+📄 **Current interface contract:** [**Interface Contract v8**](../../wiki/Interface-Contract-v8) (updated 2026-11-19)
  
 ---
  
-## Current status (Sprint 4)
+## Current status (Sprint 5, feature freeze Nov 24)
  
 **Done**
  
 | Feature | Status |
 |---|---|
+| Login bar on the page (`POST /session/login`, `GET /session/me`); staff buttons follow your real roles | ✅ Done (Sprint 5) |
 | Create Event page (form) | ✅ Saves to the real backend (staff or admin) |
-| Events calendar (day / week / month) + list view | ✅ Done (Sprint 4) |
-| Event pop-up with **Register** / **Cancel registration** | ✅ Done (Sprint 4) |
+| Events calendar (day / week / month) + list view | ✅ Done |
+| **My events** switch on the calendar (`GET /users/me/events/registered`, MASON-9) | ✅ Done (Sprint 5) |
+| Event pop-up with **Register** / **Cancel registration** | ✅ Done |
+| **Remind me the day before** toggle (`PUT /events/{id}/register/reminder`, MASON-24) | ✅ Done (Sprint 5). Notifications reads `GET /registrations/reminders` and sends it |
+| **Waitlist** for full events: join / leave, place in line (MASON-18) | ✅ Done (Sprint 5) |
+| Staff/admin waitlist panel + **change capacity**; open seats go to the waitlist automatically (MASON-19) | ✅ Done (Sprint 5) |
+| Jobs & internships page: cards, pop-up, staff post / edit / delete (`/opportunities`, MASON-13) | ✅ Done (Sprint 5) |
 | Resources page (search, major / class-year chips, resource cards, upcoming events panel) | ✅ Done; resources are sample data until `GET /resources` exists |
 | `GET /events` with filters `from`, `to`, `category`, `audience`, `format`, and `GET /events/{id}` | ✅ Done |
+| Keyword search `?q=` on `GET /events` (title, host, location, audience, category; MASON-10) | ✅ Done (Sprint 5) |
 | `POST /events` (staff or admin) | ✅ Done, returns the saved event |
-| `POST /events/{id}/register`, `GET /users/{userId}/events/registered` | ✅ Done (capacity checked in one SQL statement, so two students can't take the last seat) |
-| `DELETE /events/{id}/register` (cancel), `GET /events/{id}/register` (am I registered?) | ✅ Done (Sprint 4) |
-| User ids are Shared Core's **UUIDs**; roles are a lowercase list (`student`, `mentor`, `staff`, `admin`) | ✅ Done (Sprint 4) |
-| Real Shared Core login (`AUTH_MODE=shared-core`), test tokens still the default | ✅ Done (Sprint 4) |
+| `POST` / `DELETE` / `GET /events/{id}/register`, `GET /users/{userId}/events/registered` | ✅ Done (capacity checked in one SQL statement, so two students can't take the last seat) |
+| User ids are Shared Core's **UUIDs**; roles are a lowercase list (`student`, `mentor`, `staff`, `admin`) | ✅ Done |
+| Real Shared Core login (`AUTH_MODE=shared-core`); test users are still the default | ✅ Done |
 | Standard error format `{"error", "code", "detail"}` | ✅ Done |
 | Docker: API + page + PostgreSQL with `docker compose up --build` | ✅ Done |
 | CI (`lint-and-test`): backend tests, ESLint, Vite build, Vitest, Docker build, **and the tests again inside the Docker image** | ✅ Runs on every PR into `main` |
  
-**Still to do (Sprint 5)**
+**Still to do (before the freeze)**
  
 | Feature | Status |
 |---|---|
-| Keyword search `?q=` on `GET /events` | 🚧 In progress |
-| `GET /opportunities` + Jobs panel (MASON-13) | 🚧 In progress; panel shows placeholders |
-| `GET /resources`, submit a resource, staff approval | 📋 Planned |
-| "My events" personal calendar (MASON-9) | 📋 Planned |
-| Registration confirmation + reminders through Notifications | 📋 Planned |
-| `PUT /events/{id}`, `DELETE /events/{id}` (staff or admin) | 📋 Planned |
-| Waitlist for full events | 📋 Stretch |
+| `GET /resources` + submit a resource for review (MASON-7) | 🔜 Coming soon |
+| Staff approve resources from students (MASON-11) | 🔜 Coming soon |
+| Registration confirmation + "you got a spot" messages through Notifications | 🔜 Coming soon |
+| `PUT /events/{id}`, `DELETE /events/{id}` (staff or admin) | 🔜 Coming soon |
  
 > **Mock mode:** `VITE_USE_MOCK=true npm run dev` still works if you want to try the frontend without the backend. Events are saved in your **browser's localStorage** and only show up in that browser.
  
@@ -60,11 +63,15 @@ Then open **http://localhost:8080** (the page and the API are on the same port).
  
 If 8080 is busy, change the left number in `docker-compose.yml`, e.g. `"8083:8080"`, and open `http://localhost:8083`.
  
+Other subsystems are expected on your laptop at **Shared Core 8081** (`SHARED_CORE_URL`) and **Notifications 8082** (`NOTIFICATIONS_URL`).
+ 
 | Command | What it does |
 |---|---|
 | `docker compose down` | Stop (keeps the data) |
 | `docker compose down -v` | Stop and wipe the database (do this after a `schema.sql` change) |
 | `AUTH_MODE=shared-core docker compose up --build` | Real Shared Core logins (Shared Core running on your laptop's port 8081) |
+ 
+The page starts **logged out**: use the login bar with one of the [test users](#test-users) below.
  
 ### Option 2: Development (backend + frontend)
  
@@ -80,7 +87,7 @@ If 8080 is busy, change the left number in `docker-compose.yml`, e.g. `"8083:808
 ```
    The backend runs at **http://localhost:8080**. At startup, `schema.sql` creates the tables and `data.sql` adds the categories, audiences, and sample events.
  
-> ⚠️ **After pulling a change to `schema.sql`** (like Sprint 4's switch to UUID user ids), recreate your database once. `CREATE TABLE IF NOT EXISTS` won't change a table that already exists:
+> ⚠️ **After pulling a change to `schema.sql`** that changes an existing table (like Sprint 4's switch to UUID user ids), recreate your database once. `CREATE TABLE IF NOT EXISTS` won't change a table that already exists. (Sprint 5's new `waitlist` table and `remind` column are added automatically, so no reset is needed for those.)
 > ```bash
 > docker rm -f events-db
 > docker run --name events-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=events -p 5432:5432 -d postgres:17
@@ -109,7 +116,7 @@ Then open the link Vite prints (usually **http://localhost:5173**). Vite sends e
 |---|---|
 | `npm run dev` | Starts the dev server; the page reloads when you save a file |
 | `VITE_USE_MOCK=true npm run dev` | Same, but uses localStorage instead of the backend |
-| `VITE_DEV_TOKEN=staff-token npm run dev` | Acts as Career Services Staff (needed to create events) |
+| `VITE_DEV_TOKEN=staff-token npm run dev` | Starts already logged in as staff (otherwise use the login bar) |
 | `npm run build` | Builds the production version into `frontend/dist/` |
 | `npm run lint` | Checks code style with ESLint |
 | `npm test` | Runs the frontend tests (Vitest) |
@@ -121,20 +128,33 @@ Then open the link Vite prints (usually **http://localhost:5173**). Vite sends e
 ```bash
 curl "http://localhost:8080/events?category=Workshop&format=In-person"
 curl "http://localhost:8080/events?from=2026-11-01&to=2026-11-30"
+curl "http://localhost:8080/events?q=resume"
 curl -X POST   http://localhost:8080/events/3/register -H "Authorization: Bearer student-token"
 curl           http://localhost:8080/events/3/register -H "Authorization: Bearer student-token"
 curl -X DELETE http://localhost:8080/events/3/register -H "Authorization: Bearer student-token"
 curl http://localhost:8080/users/00000000-0000-0000-0000-000000000003/events/registered -H "Authorization: Bearer student-token"
+curl           http://localhost:8080/users/me/events/registered -H "Authorization: Bearer student-token"
+ 
+# Log in, reminders, waitlist, jobs
+curl -X POST http://localhost:8080/session/login -H "Content-Type: application/json" -d '{"email":"staff@gmu.edu","password":"ChangeMe123!"}'
+curl -X PUT  http://localhost:8080/events/3/register/reminder -H "Authorization: Bearer student-token" -H "Content-Type: application/json" -d '{"remind":true}'
+curl         http://localhost:8080/registrations/reminders -H "Authorization: Bearer staff-token"
+curl -X POST http://localhost:8080/events/3/waitlist -H "Authorization: Bearer student2-token"   # only works when the event is full
+curl         http://localhost:8080/events/3/waitlist -H "Authorization: Bearer staff-token"
+curl -X PUT  http://localhost:8080/events/3/capacity -H "Authorization: Bearer staff-token" -H "Content-Type: application/json" -d '{"capacity":35}'
+curl         http://localhost:8080/opportunities
 ```
  
-**Test tokens** (`AUTH_MODE=fake`). Same UUIDs and roles as Shared Core's seed users.
+### Test users
  
-| Token | User | `userId` | Roles |
-|---|---|---|---|
-| `student-token` (default) | jdoe@gmu.edu | `00000000-0000-0000-0000-000000000003` | `student` |
-| `student2-token` | grad@gmu.edu | `00000000-0000-0000-0000-000000000004` | `student`, `mentor` |
-| `staff-token` | staff@gmu.edu | `00000000-0000-0000-0000-000000000002` | `staff` |
-| `admin-token` | admin@gmu.edu | `00000000-0000-0000-0000-000000000001` | `admin` |
+`AUTH_MODE=fake`. Same UUIDs, roles and password as Shared Core's seed users. Log in on the page with the email + password, or send the token as `Authorization: Bearer <token>`.
+ 
+| Email | Password | Token | `userId` | Roles |
+|---|---|---|---|---|
+| jdoe@gmu.edu | `ChangeMe123!` | `student-token` | `00000000-0000-0000-0000-000000000003` | `student` |
+| grad@gmu.edu | `ChangeMe123!` | `student2-token` | `00000000-0000-0000-0000-000000000004` | `student`, `mentor` |
+| staff@gmu.edu | `ChangeMe123!` | `staff-token` | `00000000-0000-0000-0000-000000000002` | `staff` |
+| admin@gmu.edu | `ChangeMe123!` | `admin-token` | `00000000-0000-0000-0000-000000000001` | `admin` |
  
 ---
  
@@ -147,52 +167,66 @@ Events_and_Resources/
 ├── .github/workflows/ci.yml       # CI: the "lint-and-test" check on every PR
 ├── frontend/                      # React app (Vite)
 │   └── src/
-│       ├── App.jsx                # Main page: Resources, Create Event, Calendar / List switch
+│       ├── App.jsx                # Main page: login bar, Resources, Create Event, Calendar / List, Jobs
 │       ├── api/
-│       │   ├── eventsApi.js       # Calls the events + registration endpoints (fetch + token)
+│       │   ├── auth.js            # Login, the saved token, GET /session/me
+│       │   ├── eventsApi.js       # Events + registration + reminder calls (fetch + token)
+│       │   ├── myEventsApi.js     # "My events" for the calendar
+│       │   ├── waitlistApi.js     # Join / leave waitlist, see waitlist, change capacity
+│       │   ├── opportunitiesApi.js  # Jobs & internships (/opportunities)
 │       │   ├── resourcesApi.js    # Resources page data (sample resources until GET /resources)
 │       │   ├── mockEventsApi.js   # localStorage version, used with VITE_USE_MOCK=true
 │       │   └── *.test.js          # Vitest tests
+│       ├── auth/
+│       │   ├── AuthProvider.jsx   # Keeps who is logged in for the whole page
+│       │   └── useAuth.js         # useAuth(): who is logged in, isStaff
 │       ├── components/
+│       │   ├── LoginBar.jsx       # Email + password form / "Logged in as ..."
 │       │   ├── EventCard.jsx      # One event in the list
 │       │   ├── EventDetailModal.jsx  # Event pop-up (details + spots + Register / Cancel)
-│       │   ├── RegisterButton.jsx # Register / Cancel button and its states (full, registered, ...)
+│       │   ├── RegisterButton.jsx # Register / Cancel / Join waitlist and their states
+│       │   ├── ReminderToggle.jsx # "Remind me the day before"
+│       │   ├── WaitlistPanel.jsx  # Staff box in the pop-up: the line + change capacity
+│       │   ├── JobCard.jsx, JobDetailModal.jsx, JobForm.jsx  # Jobs page pieces
+│       │   ├── JobsPanel.jsx      # Jobs & internships side panel
 │       │   ├── ResourceCard.jsx   # One resource on the Resources page
-│       │   ├── UpcomingEventsPanel.jsx  # Next events for the chosen major
-│       │   └── JobsPanel.jsx      # Jobs & internships (placeholder until GET /opportunities)
+│       │   └── UpcomingEventsPanel.jsx  # Next events for the chosen major
 │       ├── models/
 │       │   └── Event.js           # The Event object and its fields
 │       ├── pages/
-│       │   ├── CreateEventPage.jsx  # Form for creating an event
-│       │   ├── CalendarPage.jsx     # Day / week / month calendar
+│       │   ├── CreateEventPage.jsx  # Form for creating an event (staff/admin)
+│       │   ├── CalendarPage.jsx     # Day / week / month calendar + "My events" switch
 │       │   ├── EventsPage.jsx       # List of upcoming events
+│       │   ├── JobsPage.jsx         # Jobs & internships
 │       │   └── ResourcesPage.jsx    # Resource directory
 │       └── utils/
 │           └── calendarDates.js   # Date math for the calendar
 ├── backend/                       # Spring Boot (Java 17, Maven), layered architecture
 │   └── src/
 │       ├── main/java/edu/gmu/cs321/events_resources/
-│       │   ├── controller/        # HTTP endpoints (EventController, RegistrationController)
-│       │   ├── service/           # Business rules
-│       │   ├── repository/        # SQL (JdbcTemplate)
+│       │   ├── controller/        # HTTP endpoints: Event, Registration, Waitlist, Session, Opportunity
+│       │   ├── service/           # Business rules: Event, Registration, Waitlist, Opportunity
+│       │   ├── repository/        # SQL (JdbcTemplate): Event, Registration, Waitlist, Opportunity
 │       │   ├── model/             # Data shapes (records)
 │       │   ├── common/            # Error format, auth check, paging
-│       │   └── integration/       # Other subsystems: Fake / SharedCore token validators
+│       │   └── integration/       # Other subsystems: Shared Core token check + login (real and fake),
+│       │                          #   NotificationsClient
 │       ├── main/resources/
-│       │   ├── application.properties  # Database + AUTH_MODE settings
+│       │   ├── application.properties  # Database, AUTH_MODE, SHARED_CORE_URL, NOTIFICATIONS_URL
 │       │   ├── schema.sql         # Tables: categories, audiences, events, event_audiences, registrations,
-│       │   │                      #         resource, opportunity, resource_audiences, opportunity_audiences
+│       │   │                      #   waitlist, resource, opportunity, resource_audiences, opportunity_audiences
 │       │   └── data.sql           # Sample categories, audiences, and events
-│       └── test/                  # JUnit: EventService, cancel registration, AuthInterceptor,
-│                                  #        SharedCoreTokenValidator, app startup
+│       └── test/                  # JUnit: EventService, OpportunityService, WaitlistService,
+│                                  #   registration cancel + reminders, AuthInterceptor,
+│                                  #   Shared Core token check + login, NotificationsClient, app startup
 └── docs/
-    ├── architecture/              # Architecture doc, sketch, and ER diagram
+    ├── architecture/              # ER diagram
     └── ai-log/                    # AI usage logs (see below)
 ```
  
 ---
  
-## Event fields (Interface Contract v6)
+## Event fields (Interface Contract v8)
  
 | Field | Example | Notes |
 |---|---|---|
@@ -208,7 +242,7 @@ Events_and_Resources/
 | `capacity` | `30` | Optional. Max seats; `0` (or blank) = unlimited |
 | `registeredCount` | `12` | Set by the server. Seats taken so far |
  
-Full request/response details and every error code are in **[Interface Contract v6](../../wiki/Interface-Contract-v6)** on the Wiki.
+Full request/response details (registration, reminders, waitlist, login, opportunities) and every error code are in **[Interface Contract v8](../../wiki/Interface-Contract-v8)** on the Wiki.
  
 ---
  
