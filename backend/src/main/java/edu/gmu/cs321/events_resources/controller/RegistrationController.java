@@ -176,4 +176,20 @@ public class RegistrationController {
         return service.upcomingReminders(from, to, page, pageSize);
     }
 
+    /**
+     * MASON-9: GET /users/me/events/registered?page=1&pageSize=20
+     * The logged-in user's own registered events, for the "My events" calendar.
+     * Same list as /users/{userId}/events/registered, but the user comes from the
+     * token, so the website doesn't need to know its own user id.
+     * Spring picks this method over /users/{userId}/... because a fixed word ("me")
+     * is a closer match than a placeholder.
+     */
+    @GetMapping("/users/me/events/registered")
+    public PagedResponse<RegisteredEvent> myRegisteredEvents(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestAttribute(AuthInterceptor.CURRENT_USER) CurrentUser user) {
+
+        return service.registeredEvents(user.id(), user, page, pageSize);
+    }
 }
