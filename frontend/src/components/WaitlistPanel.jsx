@@ -6,6 +6,9 @@
  * off the waitlist into those seats automatically, first come first served.
  * Example: 30 seats, 30 registered, 1 waiting -> set capacity to 35 -> that 1 person is registered.
  *
+ * Works for unlimited events too (capacity 0): there's no waitlist then, so the panel
+ * only offers to set a limit. Typing 0 makes a limited event unlimited again.
+ *
  * Only EventDetailModal shows this, and only when useAuth().isStaff is true (logged in as
  * staff or admin). The backend checks the role on every request too, so hiding it is not the
  * only protection.
@@ -105,6 +108,7 @@ export default function WaitlistPanel({ event, onCapacityChanged }) {
     );
   }
 
+  const unlimited = view.capacity === 0;
   const waiting = view.waitlist.length;
   // "Let everyone in" = exactly enough seats for the people registered plus everyone waiting.
   const fitsEveryone = view.registeredCount + waiting;
@@ -112,10 +116,15 @@ export default function WaitlistPanel({ event, onCapacityChanged }) {
   return (
     <section className="waitlist-panel" aria-labelledby="waitlist-heading">
       <h3 id="waitlist-heading">
-        Waitlist <span className="waitlist-panel-count">{waiting} waiting</span>
+        {unlimited ? "Capacity" : "Waitlist"}{" "}
+        <span className="waitlist-panel-count">{unlimited ? "unlimited" : `${waiting} waiting`}</span>
       </h3>
 
-      {waiting === 0 ? (
+      {unlimited ? (
+        <p className="waitlist-panel-empty">
+          This event has no seat limit, so there's no waitlist. Set a number to limit seats.
+        </p>
+      ) : waiting === 0 ? (
         <p className="waitlist-panel-empty">Nobody is waiting for this event.</p>
       ) : (
         <ol className="waitlist-panel-list">
@@ -134,7 +143,7 @@ export default function WaitlistPanel({ event, onCapacityChanged }) {
         <input
           id="waitlist-capacity"
           type="number"
-          min={view.registeredCount}
+          min={0}
           value={newCapacity}
           onChange={(e) => setNewCapacity(e.target.value)}
           required
@@ -156,8 +165,10 @@ export default function WaitlistPanel({ event, onCapacityChanged }) {
       )}
 
       <p className="waitlist-panel-hint">
-        {view.registeredCount} registered. Raising the capacity registers people from the
-        waitlist automatically, in order. It can't go below {view.registeredCount}.
+        {view.registeredCount} registered. 0 = unlimited.{" "}
+        {unlimited
+          ? `A limit can't be below ${view.registeredCount}.`
+          : `Raising the capacity registers people from the waitlist automatically, in order. It can't go below ${view.registeredCount}.`}
       </p>
 
       {message && (
