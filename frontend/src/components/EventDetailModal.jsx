@@ -106,17 +106,15 @@ export default function EventDetailModal({ eventId, onClose }) {
             </>
           )}
 
-	{/* Spots: how many seats are taken out of the total.
-              capacity 0 = unlimited, so only show spots for limited events.
+          {/* Spots: how many seats are taken out of the total.
+              capacity 0 = unlimited, so there's no total to show.
               ?? 0 = "if registeredCount is missing (null/undefined), use 0". */}
-          {event.capacity > 0 && (
-            <>
-              <dt>Spots</dt>
-              <dd>
-                {event.registeredCount ?? 0} / {event.capacity} registered
-              </dd>
-            </>
-          )}
+          <dt>Spots</dt>
+          <dd>
+            {event.capacity > 0
+              ? `${event.registeredCount ?? 0} / ${event.capacity} registered`
+              : `Unlimited (${event.registeredCount ?? 0} registered)`}
+          </dd>
         </dl>
 
           {event.description && <p>{event.description}</p>}
@@ -134,9 +132,9 @@ export default function EventDetailModal({ eventId, onClose }) {
           }
         />
 
-        {/* MASON-19: staff/admin see the waitlist and can change the capacity.
-            Only for limited events: an unlimited event (capacity 0) never has a waitlist. */}
-        {isStaff && event.capacity > 0 && (
+        {/* MASON-19: staff/admin see the waitlist and can change the capacity, on EVERY
+            event. For an unlimited event (capacity 0) the panel lets staff set a limit. */}
+        {isStaff && (
           <WaitlistPanel
             event={event}
             onCapacityChanged={(seats) => setEvent((e) => ({ ...e, ...seats }))}

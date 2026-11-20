@@ -61,7 +61,7 @@ export async function request(path, options = {}) {
 
 //GET /events -> { items: [Event, ...], page, pageSize, totalCount }
 export async function getEvents( { page = 1, pageSize = 20, ...filters } = {}) {
-    if (USE_MOCK) return mock.getEvents({ page, pageSize });
+    if (USE_MOCK) return mock.getEvents({ page, pageSize, ...filters });
 
     //const events = localStorage.getItem(STORAGE_KEY);
 
@@ -80,12 +80,13 @@ export async function getEvents( { page = 1, pageSize = 20, ...filters } = {}) {
 // The backend sends at most 50 events per page, and a busy month
 // could have more, so we keep asking for the next page until we have them all.
 // Returns a plain array of Events.
-export async function getEventsInRange(from, to) {
-  const PAGE_SIZE = 50; 
+// filters (optional) = { q, category, format } from the Events page; "" = not filtered.
+export async function getEventsInRange(from, to, filters = {}) {
+  const PAGE_SIZE = 50;
   const all = [];
   let page = 1;
   while (true) {
-    const data = await getEvents({ page, pageSize: PAGE_SIZE, from, to });
+    const data = await getEvents({ page, pageSize: PAGE_SIZE, from, to, ...filters });
     all.push(...data.items);
     if (all.length >= data.totalCount || data.items.length === 0) return all;
     page += 1;

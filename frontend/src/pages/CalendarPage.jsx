@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getEventsInRange } from "../api/eventsApi";
 import { getMyRegisteredEventsInRange } from "../api/myEventsApi";
 import EventDetailModal from "../components/EventDetailModal";
+import { describeFilters, hasFilters, matchesFilters } from "../utils/eventSearch";
 import {
   VIEWS,
   WEEKDAY_NAMES,
@@ -34,9 +35,16 @@ const SHOW_OPTIONS = [
   { value: "all", label: "All events" },
   { value: "mine", label: "My events" },
 ];
-// Props: refreshKey = number from App.jsx that changes after an event is created,
-// so a new event shows up on the calendar without refreshing the browser.
-export default function CalendarPage({ refreshKey }) {
+/**
+ * Props:
+ *   refreshKey = number from EventsHubPage that changes after an event is created,
+ *                so a new event shows up on the calendar without refreshing the browser
+ *   filters    = { q, category, format } from the Events page (MASON-10); "" = not filtered
+ *   onShowList = switches the Events tab to List view (to see matches in other months)
+ *   onModalClose = called when the event pop-up closes, so the side cards can reload
+ *                  (the user may have registered or cancelled)
+ */
+export default function CalendarPage({ refreshKey, filters = {}, onShowList, onModalClose }) {
   const [view, setView] = useState("month");          // "month" | "week" | "day"
   const [anchor, setAnchor] = useState(() => new Date()); // the day we're looking at; starts at today
   const [events, setEvents] = useState([]);
@@ -57,7 +65,8 @@ export default function CalendarPage({ refreshKey }) {
   // One string that names "the data we want right now". It changes whenever the range,
   // refreshKey or reloadKey changes. loadedKey = the request whose answer we have.
   // We're loading while the two don't match, so there's no setLoading(true) in the effect.
-  const requestKey = `${from}|${to}|${refreshKey}|${reloadKey}|${show}`;
+  const { q = "", category = "", format = "" } = filters;
+  const requestKey = `${from}|${to}|${refreshKey}|${reloadKey}|${show}|${q}|${category}|${format}`;
   const [loadedKey, setLoadedKey] = useState(null);
   const loading = loadedKey !== requestKey;
 
@@ -65,8 +74,13 @@ export default function CalendarPage({ refreshKey }) {
   // after an event is created (refreshKey), or after the pop-up closes (reloadKey).
   useEffect(() => {
     let ignore = false; // ignore an old answer that arrives after a newer request (same trick as EventsPage)
-    const load = show === "mine" ? getMyRegisteredEventsInRange : getEventsInRange;
-    load(from, to)
+    // "All events": the backend filters. "My events": that endpoint has no filters,
+    // so we filter the student's own events here with the same rules.
+    const wanted = { q, category, format };
+    const load = show === "mine"
+      ? getMyRegisteredEventsInRange(from, to).then((items) => items.filter((e) => matchesFilters(e, wanted)))
+      : getEventsInRange(from, to, wanted);
+    load
       .then((items) => {
         if (ignore) return;
         setEvents(items);
@@ -82,7 +96,7 @@ export default function CalendarPage({ refreshKey }) {
     return () => {
       ignore = true;
     };
-  }, [from, to, show, requestKey]);
+  }, [from, to, show, q, category, format, requestKey]);
 
   // { "2026-11-05": [events...] }, only recalculated when `events` changes.
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
@@ -142,8 +156,16 @@ export default function CalendarPage({ refreshKey }) {
       {error ? (
         <p className="error" role="alert">Could not load events: {error}</p>
       ) : (
-        <p className="calendar-status">
-      {loading ? "Loading events…" : statusText(show, view, events.length)}
+        <p className="calendar-status" role="status">
+          {loading ? "Loading events…" : statusText(show, view, events.length, filters)}
+          {!loading && hasFilters(filters) && onShowList && (
+            <>
+              {" "}
+              <button type="button" className="calendar-status__link" onClick={onShowList}>
+                See all matches in List view
+              </button>
+            </>
+          )}
         </p>
       )}
 
@@ -165,14 +187,26 @@ export default function CalendarPage({ refreshKey }) {
           onClose={() => {
             setSelectedEventId(null);
             setReloadKey((n) => n + 1); // refresh counts in case the user registered
+            onModalClose?.();
           }}
         />
       )}
     </section>
   );
 }
-function statusText(show, view, count) {
+/**
+ * The line above the grid, e.g. "12 events shown" or, while filtering,
+ * '2 events match "resume" · Workshop this month.'
+ */
+function statusText(show, view, count, filters) {
   const plural = count === 1 ? "" : "s";
+  if (hasFilters(filters)) {
+    const label = describeFilters(filters);
+    const what = show === "mine" ? "of your registered events" : `event${plural}`;
+    const verb = count === 1 ? "matches" : "match";
+    if (count === 0) return `No ${show === "mine" ? "registered " : ""}events match ${label} this ${view}.`;
+    return `${count} ${what} ${verb} ${label} this ${view}.`;
+  }
   if (show === "all") return `${count} event${plural} shown`;
   if (count === 0) return `You haven't registered for any events this ${view}. Switch to All events to find one.`;
   return `${count} of your registered event${plural} shown`;

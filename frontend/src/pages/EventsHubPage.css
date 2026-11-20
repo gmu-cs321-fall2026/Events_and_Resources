@@ -1,0 +1,183 @@
+/**
+ * EventsHubPage.css: the parts of the Events tab the Resources page doesn't have.
+ *
+ * The hero, search box, chips, pills, empty box and colors (--green, --gold, ...) come
+ * from ResourcesPage.css. The page's wrapper has both classes, "resources-page events-page",
+ * so those variables and fonts apply here too. Rules below start with .events-page, so they
+ * only change the Events tab.
+ */
+
+/**
+ * Body: everything under the hero.
+ */
+.events-body {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 32px 24px 0;
+}
+
+/**
+ * Two columns: the calendar/list takes most of the room, the side cards get a narrow
+ * 260px column. Below 900px wide the cards drop under the calendar.
+ */
+.events-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 20px;
+  align-items: start;
+}
+
+.events-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.events-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .events-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/**
+ * Smaller side cards than on the Resources page, to fit the narrow column.
+ */
+.events-side .side-panel {
+  padding: 16px;
+  gap: 10px;
+}
+
+.events-side .side-panel__title {
+  font-size: 18px;
+}
+
+.events-side .event-row {
+  gap: 10px;
+  padding: 6px;
+}
+
+.events-side .event-row__date {
+  width: 44px;
+  flex-basis: 44px;
+  padding: 6px 0;
+}
+
+.events-side .event-row__day {
+  font-size: 18px;
+}
+
+.events-side .event-row__title {
+  font-size: 14px;
+}
+
+/**
+ * White card around the calendar/list, like the side panels
+ * on the Resources page.
+ */
+.events-panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+}
+
+.events-create {
+  scroll-margin-top: 16px;
+}
+
+/**
+ * Calendar / List switch, now on the right of the heading. Overrides the centered
+ * version in CalendarPage.css.
+ */
+.events-page .events-view-switch {
+  margin: 0;
+  justify-content: flex-end;
+}
+
+.events-page .events-view-switch button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1.5px solid #d9d5c8;
+  border-radius: 10px;
+  background: #fff;
+  color: #3e4842;
+  font: 500 14px Inter, sans-serif;
+}
+
+.events-page .events-view-switch button[aria-pressed="true"] {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+  font-weight: 600;
+}
+
+.events-filter-summary {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/**
+ * Calendar in Mason colors: green for "on" buttons and event chips, gold for today.
+ * Only inside the Events tab; CalendarPage.css keeps its own defaults.
+ */
+.events-page .calendar-title {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  color: var(--ink);
+}
+
+.events-page .calendar-toolbar button {
+  border-radius: 8px;
+  border-color: #d9d5c8;
+  background: #fff;
+  color: #3e4842;
+}
+
+.events-page .calendar-toolbar button:hover,
+.events-page .calendar-toolbar button:focus-visible {
+  border-color: var(--green);
+}
+
+.events-page .calendar-views button.is-active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.events-page .calendar-status {
+  color: var(--muted);
+}
+
+.events-page .calendar-status__link {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.events-page .calendar-cell.is-today {
+  background: var(--gold-soft);
+}
+
+.events-page .calendar-chip {
+  background: var(--green-soft);
+  border-color: transparent;
+  color: var(--green-dark);
+}
+
+.events-page .calendar-chip:hover,
+.events-page .calendar-chip:focus-visible {
+  border-color: var(--green);
+}
+
+.events-page .calendar-day-item:hover,
+.events-page .calendar-day-item:focus-visible {
+  border-color: var(--green);
+  background: var(--green-soft);
+}

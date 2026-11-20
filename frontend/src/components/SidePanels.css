@@ -162,3 +162,35 @@
   font-weight: 600;
   color: #8a3b12;
 }
+
+/**
+ * Event rows and the bottom button as real <button>s (Events tab side cards), so they
+ * open the event pop-up and work with the keyboard. These undo the browser's button look.
+ */
+.event-row--button,
+button.side-panel__button {
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.event-row--button {
+  border: 0;
+  background: none;
+}
+
+.event-row--button:focus-visible {
+  outline: 3px solid #f2b705;
+  outline-offset: 2px;
+}
+
+.event-row__seats {
+  font-size: 12px;
+  color: #0b5d3b;
+  font-weight: 600;
+}
+
+.event-row__seats--full {
+  color: #9b1c1c;
+}
