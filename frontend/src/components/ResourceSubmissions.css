@@ -1,0 +1,369 @@
+/**
+ * ResourceSubmissions.css (MASON-7 / MASON-11): the share pop-up, "My submissions"
+ * and the staff review panel. Same colors and fonts as the Resources page, kept in
+ * the variables below so all three match it.
+ */
+
+.submissions,
+.modal.share-modal {
+  --green: #0b5d3b;
+  --green-dark: #073d27;
+  --green-soft: #edf3ef;
+  --gold: #f2b705;
+  --gold-soft: #fbf3d6;
+  --gold-text: #5a4500;
+  --ink: #18231d;
+  --muted: #4a5650;
+  --line: #e4e1d6;
+  --paper: #faf8f2;
+  --danger: #9b1c1c;
+  --danger-soft: #fbeaea;
+
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--ink);
+  text-align: left;
+}
+
+/**
+ * Buttons shared by all three.
+ */
+
+.sub-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--green);
+  background: var(--green);
+  color: #fff;
+  font: 600 14px Inter, sans-serif;
+  cursor: pointer;
+}
+
+.sub-button:hover:not(:disabled) {
+  background: var(--green-dark);
+  border-color: var(--green-dark);
+}
+
+.sub-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sub-button--plain {
+  background: #fff;
+  color: var(--green);
+}
+
+.sub-button--plain:hover:not(:disabled) {
+  background: var(--green-soft);
+  color: var(--green-dark);
+}
+
+.sub-button--danger {
+  background: #fff;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.sub-button--danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+
+.sub-button:focus-visible,
+.share-chip:focus-visible,
+.review-tab:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.share-error {
+  margin: 12px 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/**
+ * The share pop-up.
+ */
+
+.modal.share-modal {
+  max-width: 600px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.share-form h2 {
+  margin: 0 0 4px;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  color: var(--ink);
+}
+
+.share-form__hint {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.share-form label,
+.share-form legend,
+.review-decision label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.share-form__optional {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.share-form input,
+.share-form select,
+.share-form textarea,
+.review-decision textarea {
+  font: 400 15px Inter, sans-serif;
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.share-form input:focus,
+.share-form select:focus,
+.share-form textarea:focus,
+.review-decision textarea:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-soft);
+}
+
+.share-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.share-form__majors {
+  border: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.share-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.share-chip {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font: 500 14px Inter, sans-serif;
+  cursor: pointer;
+}
+
+.share-chip--on {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.share-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/**
+ * "My submissions" and the staff review panel.
+ */
+
+.submissions {
+  max-width: 1120px;
+  margin: 32px auto;
+  padding: 28px 24px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.submissions--staff {
+  border-top: 4px solid var(--gold);
+}
+
+.submissions__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: var(--muted);
+}
+
+.submissions__head h2 {
+  margin: 4px 0 0;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 24px;
+  color: var(--ink);
+}
+
+.submissions__eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a6a00;
+}
+
+.submissions__empty {
+  margin: 8px 0;
+  color: var(--muted);
+}
+
+.submission-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.submission {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.submission__main {
+  flex: 1 1 360px;
+  min-width: 0;
+}
+
+.submission h3 {
+  margin: 8px 0 4px;
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.submission__meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.submission__desc {
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.submission__link {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--green);
+  word-break: break-all;
+}
+
+.submission__note {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--gold);
+  background: var(--gold-soft);
+  color: var(--gold-text);
+  font-size: 14px;
+}
+
+.submission__locked {
+  margin: 0;
+  align-self: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.submission__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-decision {
+  flex: 0 1 320px;
+}
+
+.review-decision textarea {
+  resize: vertical;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge--pending {
+  background: var(--gold-soft);
+  color: var(--gold-text);
+}
+
+.status-badge--approved {
+  background: var(--green-soft);
+  color: var(--green-dark);
+}
+
+.status-badge--rejected {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.review-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.review-tab {
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font: 500 14px Inter, sans-serif;
+  cursor: pointer;
+}
+
+.review-tab--on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+@media (max-width: 560px) {
+  .share-form__row {
+    grid-template-columns: 1fr;
+  }
+}
