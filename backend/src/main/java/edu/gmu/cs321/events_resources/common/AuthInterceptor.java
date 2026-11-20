@@ -39,6 +39,12 @@ import jakarta.servlet.http.HttpServletResponse;
  *   POST / DELETE /events/{id}/waitlist      any logged-in user (join / leave, MASON-18)
  *   GET  /events/{id}/waitlist               staff/admin only (see the line, MASON-19)
  *   PUT  /events/{id}/capacity               staff/admin only (change capacity, MASON-19)
+ *   GET  /resources                          public: the approved directory (MASON-12)
+ *   GET  /resources?status=pending|rejected  staff/admin only: the review queue (MASON-11)
+ *   POST /resources                          any logged-in user (share a resource, MASON-7)
+ *   PUT / DELETE /resources/{id}             any logged-in user (the service checks it's YOURS and pending)
+ *   PUT  /resources/{id}/status              staff/admin only (approve / deny / on hold, MASON-11)
+ *   GET  /users/me/resources                 any logged-in user (my submissions, MASON-7)
  */
 @Component // Spring creates one of these; WebConfig asks for it and plugs it in
 public class AuthInterceptor implements HandlerInterceptor {
@@ -67,13 +73,15 @@ public class AuthInterceptor implements HandlerInterceptor {
         String method = request.getMethod();   // "GET", "POST", ...
         String path = request.getRequestURI(); // "/events/5/register" (no "?page=1" part)
 
-        if (!needsLogin(method, path)) {
+        boolean reviewQueue = isResourceReviewQueue(method, path, request.getParameter("status"));
+
+        if (!needsLogin(method, path) && !reviewQueue) {
             return true;
         }
 
         CurrentUser user = authenticate(request);
 
-        if (needsStaff(method, path) && !user.isStaff()) {
+        if ((needsStaff(method, path) || reviewQueue) && !user.isStaff()) {
             throw ApiException.forbidden("Only Career Services staff or admin can do this");
         }
 
@@ -110,8 +118,9 @@ public class AuthInterceptor implements HandlerInterceptor {
         boolean myRegistration = path.matches("/events/\\d+/(register|waitlist)/?");
         boolean readingEvents = method.equals("GET") && path.startsWith("/events") && !myRegistration;
         boolean readingJobs = method.equals("GET") && path.startsWith("/opportunities");
+        boolean readingResources = method.equals("GET") && path.matches("/resources/?");
         boolean browserPreCheck = method.equals("OPTIONS");
-        return !(readingEvents || readingJobs || browserPreCheck);
+        return !(readingEvents || readingJobs || readingResources || browserPreCheck);
     }
 
     /** Does this request need a staff/admin user? Creating, editing, or deleting events.
@@ -129,8 +138,20 @@ public class AuthInterceptor implements HandlerInterceptor {
         boolean readReminders = path.matches("/registrations/reminders/?");
         boolean seeWaitlist = method.equals("GET") && path.matches("/events/\\d+/waitlist/?");
         boolean changeCapacity = method.equals("PUT") && path.matches("/events/\\d+/capacity/?");
+        boolean reviewResource = method.equals("PUT") && path.matches("/resources/\\d+/status/?");
 
         return createEvent || changeEvent || createJob || changeJob || readReminders
-                || seeWaitlist || changeCapacity;
+                || seeWaitlist || changeCapacity || reviewResource;
+    }
+
+    /**
+     * GET /resources is public, but only for approved resources. Asking for
+     * ?status=pending (or rejected) is the staff review queue (MASON-11), so it needs
+     * a staff/admin token. Leaving status out, or status=approved, stays public.
+     */
+    private boolean isResourceReviewQueue(String method, String path, String status) {
+        boolean listing = method.equals("GET") && path.matches("/resources/?");
+        boolean notApproved = status != null && !status.isBlank() && !status.trim().equalsIgnoreCase("approved");
+        return listing && notApproved;
     }
 }

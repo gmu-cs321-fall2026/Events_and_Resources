@@ -295,4 +295,52 @@ class AuthInterceptorTest {
             assertTrue(run(request("PUT", "/events/3/capacity", token)));
         }
     }
+
+    // ---- Resources (MASON-7 submit, MASON-11 review, MASON-12 browse) ----
+
+    @Test
+    void browsingApprovedResourcesIsPublic() {
+        assertTrue(run(request("GET", "/resources", null)));
+
+        MockHttpServletRequest approved = request("GET", "/resources", null);
+        approved.setParameter("status", "approved");
+        assertTrue(run(approved));
+    }
+
+    @Test
+    void theReviewQueueNeedsStaffOrAdmin() {
+        MockHttpServletRequest guest = request("GET", "/resources", null);
+        guest.setParameter("status", "pending");
+        assertEquals("UNAUTHORIZED", assertThrows(ApiException.class, () -> run(guest)).getCode());
+
+        MockHttpServletRequest student = request("GET", "/resources", "student-token");
+        student.setParameter("status", "pending");
+        assertEquals("FORBIDDEN", assertThrows(ApiException.class, () -> run(student)).getCode());
+
+        for (String token : List.of("staff-token", "admin-token")) {
+            MockHttpServletRequest staff = request("GET", "/resources", token);
+            staff.setParameter("status", "rejected");
+            assertTrue(run(staff));
+        }
+    }
+
+    @Test
+    void sharingEditingAndDeletingAResourceNeedALogin() {
+        assertThrows(ApiException.class, () -> run(request("POST", "/resources", null)));
+
+        assertTrue(run(request("POST", "/resources", "student-token")));
+        assertTrue(run(request("PUT", "/resources/5", "student-token")));
+        assertTrue(run(request("DELETE", "/resources/5", "student-token")));
+        assertTrue(run(request("GET", "/users/me/resources", "student-token")));
+    }
+
+    @Test
+    void onlyStaffOrAdminCanApproveOrDeny() {
+        ApiException error = assertThrows(ApiException.class,
+                () -> run(request("PUT", "/resources/5/status", "student-token")));
+        assertEquals("FORBIDDEN", error.getCode());
+
+        assertTrue(run(request("PUT", "/resources/5/status", "staff-token")));
+        assertTrue(run(request("PUT", "/resources/5/status", "admin-token")));
+    }
 }

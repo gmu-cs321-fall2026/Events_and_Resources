@@ -75,23 +75,6 @@ INSERT INTO events (event_title, host, event_date, event_time, location, categor
 SELECT 'Mock Technical Interviews', 'CS Department', '2026-11-03', '14:00', 'Nguyen Engineering 1103', 'Workshop', 'CS Majors, Juniors, Seniors', 'In-person', 12
 WHERE NOT EXISTS (SELECT 1 FROM events WHERE event_title = 'Mock Technical Interviews');
 
-
--- UPCOMING EVENTS (MASON-50): future-dated samples, so Home's "Coming up" and the
--- search bar have something to show. Their audiences are already linked below.
--- Same rule as above: a row is only added if no event with that title exists yet.
-INSERT INTO events (event_title, host, event_date, event_time, location, category, audience, format, register_link, capacity)
-SELECT v.title, v.host, v.event_date::date, v.event_time::time, v.location, v.category, v.audience, v.format, NULL, v.capacity
-FROM (VALUES
-    ('Federal Careers Info Session', 'Office of Personnel Management', '2026-11-19', '16:00', 'Zoom',                       'Employer Info Session', 'All Students','Virtual', 0),
-    ('Salary Negotiation 101', 'Career Services','2026-11-24','13:00','Johnson Center 240','Workshop', 'Seniors, Graduate Students','In-person', 40),
-    ('Cybersecurity Careers Networking Hour', 'GMU Cyber Club', '2026-12-03', '18:00', 'Horizon Hall 1010',        'Networking', 'CS Majors, IT Majors', 'In-person', 60),
-    ('First-Gen Career Mixer', 'Career Services', '2026-12-08', '17:30', 'Merten Hall 1200', 'Networking', 'First-Generation Students', 'In-person', 50),
-    ('Career Services Staff Training','Career Services','2026-12-10', '10:00', 'SUB I, Room 3B', 'Internal', 'Staff', 'In-person', 20),
-    ('Grad School Panel: Is a Master''s Worth It?', 'Graduate Admissions', '2027-01-27', '16:30', 'Zoom', 'Panel', 'Juniors, Seniors, International Students','Virtual', 0),
-    ('Alumni in Industry Panel', 'GMU Alumni Association', '2027-02-04', '18:00', 'Fenwick Library Atrium', 'Panel', 'All Students, Alumni','In-person', 120),
-    ('Spring Internship Fair','Career Services', '2027-02-11', '11:00', 'EagleBank Arena','Career Fair', 'All Students', 'In-person', 0)
-) AS v(title, host, event_date, event_time, location, category, audience, format, capacity)
-WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.event_title = v.title);
 -- 4. EVENT_AUDIENCES (links each event to its audiences)
 -- We don't know the ids ahead of time (the database picks them), so we look
 -- them up by event title and audience name:
@@ -156,3 +139,80 @@ FROM (VALUES
      'https://cs.gmu.edu/', '2027-01-20')
 ) AS v(title, employer, job_type, description, link, deadline)
 WHERE NOT EXISTS (SELECT 1 FROM opportunity o WHERE o.title = v.title);
+
+-- RESOURCES (MASON-7 / MASON-11 / MASON-12): the prep resources directory.
+-- Same idea as the opportunities above: a row is only added if no resource with that title exists yet.
+--   user_id ...0002 = staff@gmu.edu   (Career Services posts are approved right away)
+--   user_id ...0003 = jdoe@gmu.edu    (student-token)   user_id ...0004 = grad@gmu.edu (student2-token)
+-- The two "pending" rows give the staff review queue something to show, and let
+-- student-token try editing/deleting a pending submission.
+INSERT INTO resource (user_id, owner, title, description, resource_type, industry, link, status)
+SELECT v.user_id::uuid, v.owner, v.title, v.description, v.resource_type, v.industry, v.link, v.status
+FROM (VALUES
+    ('00000000-0000-0000-0000-000000000002', 'Career Services', 'Tech resume checklist',
+     'One-page format, project bullets that show impact, and the skills section recruiters scan first.',
+     'Resume & Cover Letter', 'Technology', 'https://careers.gmu.edu/', 'approved'),
+    ('00000000-0000-0000-0000-000000000002', 'Career Services', 'Behavioral question bank (STAR)',
+     'Common "tell me about a time" questions with a STAR worksheet to plan your stories.',
+     'Interview Questions', 'All industries', NULL, 'approved'),
+    ('00000000-0000-0000-0000-000000000004', 'Student submission', 'Technical interview prep: data structures',
+     'Arrays, hash maps, trees and graphs: what to review and how to talk through your approach.',
+     'Interview Questions', 'Technology', NULL, 'approved'),
+    ('00000000-0000-0000-0000-000000000002', 'Career Services', 'Negotiating your first offer',
+     'How to research a range, what to say on the call, and what else you can ask for besides salary.',
+     'Salary Negotiation', 'All industries', NULL, 'approved'),
+    ('00000000-0000-0000-0000-000000000002', 'Career Services', '30-second pitch templates',
+     'Fill-in templates for career fairs and info sessions, with examples for different class years.',
+     'Elevator Pitch', 'All industries', NULL, 'approved'),
+    ('00000000-0000-0000-0000-000000000002', 'Career Services', 'Applying for government internships',
+     'Federal resumes, job-board searches and security clearance basics, step by step.',
+     'Application Tips', 'Government', NULL, 'approved'),
+    ('00000000-0000-0000-0000-000000000004', 'Student submission', 'Cover letter template for IT support roles',
+     'A short template that connects help-desk and lab experience to the job posting.',
+     'Resume & Cover Letter', 'Technology', NULL, 'approved'),
+    ('00000000-0000-0000-0000-000000000002', 'Career Services', 'Practice interviews with a peer',
+     'Pair up with another student for a mock interview and get private feedback afterwards.',
+     'Practice Tools', 'All industries', NULL, 'approved'),
+    ('00000000-0000-0000-0000-000000000002', 'Career Services', 'Landing your first internship',
+     'Where freshmen and sophomores can find early programs, and what to put on a resume with little experience.',
+     'Application Tips', 'All industries', NULL, 'approved'),
+    ('00000000-0000-0000-0000-000000000004', 'Student submission', 'Senior job search timeline',
+     'When full-time recruiting opens, how to track offers, and how to handle deadlines that overlap.',
+     'Application Tips', 'All industries', NULL, 'approved'),
+    ('00000000-0000-0000-0000-000000000002', 'Career Services', 'Explaining your research to employers',
+     'How to describe a thesis or research project to industry interviewers in plain language.',
+     'Interview Questions', 'Research', NULL, 'approved'),
+    ('00000000-0000-0000-0000-000000000003', 'Student submission', 'Questions I was asked at a fintech career fair',
+     'Five questions recruiters asked me at the fall fair, and the short answers that got me a second interview.',
+     'Interview Questions', 'Finance', NULL, 'pending'),
+    ('00000000-0000-0000-0000-000000000004', 'Student submission', 'Free mock coding interview sites',
+     'A short list of free sites where you can practice timed coding problems before a technical interview.',
+     'Practice Tools', 'Technology', NULL, 'pending')
+) AS v(user_id, owner, title, description, resource_type, industry, link, status)
+WHERE NOT EXISTS (SELECT 1 FROM resource r WHERE r.title = v.title);
+
+-- RESOURCE_AUDIENCES: which majors / class years each resource is for (same lookup as event_audiences).
+INSERT INTO resource_audiences (resource_id, audience_id)
+SELECT r.id, a.id
+FROM (VALUES
+    ('Tech resume checklist',                          'CS Majors'),
+    ('Tech resume checklist',                          'IT Majors'),
+    ('Behavioral question bank (STAR)',                'All Students'),
+    ('Technical interview prep: data structures',      'CS Majors'),
+    ('Negotiating your first offer',                   'All Students'),
+    ('30-second pitch templates',                      'All Students'),
+    ('Applying for government internships',            'CS Majors'),
+    ('Applying for government internships',            'IT Majors'),
+    ('Cover letter template for IT support roles',     'IT Majors'),
+    ('Practice interviews with a peer',                'All Students'),
+    ('Landing your first internship',                  'Freshmen'),
+    ('Landing your first internship',                  'Sophomores'),
+    ('Senior job search timeline',                     'Juniors'),
+    ('Senior job search timeline',                     'Seniors'),
+    ('Explaining your research to employers',          'Graduate Students'),
+    ('Questions I was asked at a fintech career fair', 'All Students'),
+    ('Free mock coding interview sites',               'CS Majors')
+) AS link(title, audience_name)
+JOIN resource  r ON r.title = link.title
+JOIN audiences a ON a.name  = link.audience_name
+ON CONFLICT DO NOTHING;

@@ -7,6 +7,7 @@
  * "Shared by" shows who posted it (the ticket asks students to see that).
  * The avatar is green for Career Services and gold for student submissions.
  * The Open link opens in a new tab; rel="noreferrer" is the safe default for that.
+ * A resource without a link (a tip written in the description) has no Open button.
  */
 import "./ResourceCard.css";
 
@@ -40,10 +41,12 @@ export default function ResourceCard({ resource }) {
             <span className="resource-card__by">{resource.sharedBy}</span>
           </div>
         </div>
-        <a className="resource-card__open" href={resource.link} target="_blank" rel="noreferrer" aria-label={`Open ${resource.title}`}>
-          Open
-          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 17 17 7M9 7h8v8" /></svg>
-        </a>
+        {resource.link && (
+          <a className="resource-card__open" href={resource.link} target="_blank" rel="noreferrer" aria-label={`Open ${resource.title}`}>
+            Open
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 17 17 7M9 7h8v8" /></svg>
+          </a>
+        )}
       </div>
     </article>
   );

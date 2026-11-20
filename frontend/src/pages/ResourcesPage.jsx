@@ -9,8 +9,11 @@
  * as the "Resources" tab.
  *
  * Props (all optional, filled in as teammates push):
- *   onShare       = opens Jean's "submit a resource" form (MASON-7). Without it the
- *                   button is disabled and says "coming soon".
+ *   onShare       = opens the "Share a resource" form (MASON-7). App.jsx only passes it
+ *                   when someone is logged in; without it the button is disabled and
+ *                   asks them to log in.
+ *   reloadKey     = changes after a resource is shared, approved or denied, so the
+ *                   directory loads again
  *   calendarHref  = link to Trang's calendar (MASON-3)
  *   jobsHref      = link to the Jobs page (MASON-13), "#jobs" by default
  *   jobsReloadKey = changes after staff post/edit/delete a job, so the jobs panel reloads
@@ -27,12 +30,12 @@ import JobsPanel from "../components/JobsPanel";
 import gmuLogo from "../assets/gmu-logo.png";
 import "./ResourcesPage.css";
 
-export default function ResourcesPage({ onShare, calendarHref = "#", jobsHref = "#jobs", jobsReloadKey = 0 }) {
+export default function ResourcesPage({ onShare, calendarHref = "#", jobsHref = "#jobs", jobsReloadKey = 0, reloadKey = 0 }) {
   const [major, setMajor] = useState("All majors");
   const [type, setType] = useState("All types");
   const [query, setQuery] = useState("");
 
-  const filterKey = `${major}|${type}|${query}`;
+  const filterKey = `${major}|${type}|${query}|${reloadKey}`;
   const [result, setResult] = useState({ key: null, items: [], error: null });
 
   useEffect(() => {
@@ -74,7 +77,7 @@ export default function ResourcesPage({ onShare, calendarHref = "#", jobsHref = 
             className="share-button"
             onClick={onShare}
             disabled={!onShare}
-            title={onShare ? undefined : "Coming soon"}
+            title={onShare ? undefined : "Log in to share a resource"}
           >
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
             Share a resource

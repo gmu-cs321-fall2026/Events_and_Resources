@@ -108,6 +108,30 @@ CREATE TABLE IF NOT EXISTS resource (
 );
 
 -- ---------------------------------------------------------------------------
+-- MASON-7 (submit a resource) / MASON-11 (approve resources): the columns a
+-- resource card and the review queue need. ADD COLUMN IF NOT EXISTS updates
+-- databases that already have the table, so nobody has to reset their database.
+--
+-- user_id becomes a UUID (Shared Core's user id, same as registrations.user_id).
+-- "USING user_id::text::uuid" is safe to run on every startup: the table had no
+-- rows while it was BIGINT, and once it's a UUID the cast changes nothing.
+--
+-- status: pending  = waiting for staff/admin (the student can still edit or delete it)
+--         approved = posted in the public directory (locked for the student)
+--         rejected = denied by staff/admin (locked; review_note says why)
+-- ---------------------------------------------------------------------------
+ALTER TABLE resource ALTER COLUMN user_id TYPE UUID USING user_id::text::uuid;
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS title         VARCHAR(200)  NOT NULL DEFAULT '';
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS description   VARCHAR(2000) NOT NULL DEFAULT '';
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS resource_type VARCHAR(50)   NOT NULL DEFAULT 'Application Tips';
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS industry      VARCHAR(100)  NOT NULL DEFAULT 'All industries';
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS created_at    TIMESTAMP     NOT NULL DEFAULT now();
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS updated_at    TIMESTAMP     NOT NULL DEFAULT now();
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS reviewed_by   UUID;
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS reviewed_at   TIMESTAMP;
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS review_note   VARCHAR(500);
+
+-- ---------------------------------------------------------------------------
 -- Opportunities: one row per career opportunity.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS opportunity (

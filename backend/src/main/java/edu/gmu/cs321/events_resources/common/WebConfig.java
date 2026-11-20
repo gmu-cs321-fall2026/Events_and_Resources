@@ -23,7 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authInterceptor)
                 // ** = "anything after this", e.g. /events/5/register
-                .addPathPatterns("/events", "/events/**", "/users/**", "/opportunities", "/opportunities/**", "/session/me", "/registrations/**");
+                .addPathPatterns("/events", "/events/**", "/users/**", "/opportunities", "/opportunities/**", "/resources", "/resources/**", "/session/me", "/registrations/**");
         // URLs not listed here (like /hello and POST /session/login) skip the auth check entirely.
     }
 }
