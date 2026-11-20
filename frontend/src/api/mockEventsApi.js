@@ -2,6 +2,8 @@
 // Turned on with VITE_USE_MOCK=true (see eventsApi.js).
 // It saves events in the browser's localStorage, but returns the SAME shapes the real backend will (interface contract v1), so pages don't need to change when we switch to the real server.
 
+import { matchesFilters } from "../utils/eventSearch";
+
 const STORAGE_KEY = "careerEvents";
 
 function loadAll() {
@@ -16,9 +18,11 @@ function saveAll(events) {
 
 // Earliest first, same as the contract: by date, then time.
 //"YYY-MM-DD" strings sort, and from/to filter
-export async function getEvents({ page = 1, pageSize = 20, from, to } = {}) {
+// q, category, format = the Events page filters (MASON-10), checked the same way the backend does it
+export async function getEvents({ page = 1, pageSize = 20, from, to, q, category, format } = {}) {
   const all = loadAll()
     .filter((e) => (!from || e.date >= from) && (!to || e.date <= to))
+    .filter((e) => matchesFilters(e, { q, category, format }))
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)
   );
   const start = (page - 1) * pageSize;
