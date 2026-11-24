@@ -1,45 +1,68 @@
-import ResourcesPage from "./pages/ResourcesPage";
+/**
+ * App: the top of the React app.
+ *
+ * MASON-50 (Website navigation): the navigation bar and the login bar, then ONE page
+ * at a time, picked from the "#" part of the URL by useHashRoute():
+ *   #home (default)  HomePage        a quick look at events, jobs and resources, with search
+ *   #events          EventsHubPage   calendar/list (+ Create Event for staff and admin)
+ *   #resources       ResourcesPage   resource directory (+ share, My submissions, review queue)
+ *   #jobs            JobsPage        jobs & internships
+ * Links anywhere on the site just point at those hashes, e.g. "See all jobs" -> #jobs.
+ * "#calendar" (the Resources page's "Open in calendar") also opens Events.
+ *
+ * LoginBar (Trang) stays on every page, so you can log in or out from anywhere.
+ */
 import { useState } from "react";
+import LoginBar from "./components/LoginBar";
+import NavBar from "./components/NavBar";
 import ShareResourceModal from "./components/ShareResourceModal";
 import MyResourcesPanel from "./components/MyResourcesPanel";
 import ResourceReviewPanel from "./components/ResourceReviewPanel";
-import CreateEventPage from "./pages/CreateEventPage";
-import EventsPage from "./pages/EventsPage";
-import CalendarPage from "./pages/CalendarPage";
+import EventsHubPage from "./pages/EventsHubPage";
+import HomePage from "./pages/HomePage";
 import JobsPage from "./pages/JobsPage";
-import LoginBar from "./components/LoginBar";
+import ResourcesPage from "./pages/ResourcesPage";
 import { useAuth } from "./auth/useAuth";
+import { useHashRoute } from "./utils/hashRoute";
 
+/**
+ * State (only the Resources page needs any, for MASON-7 / MASON-11):
+ *   sharing      = true while the "Share a resource" pop-up is open
+ *   resourcesKey = goes up after a resource is shared, edited, deleted, approved or denied,
+ *                  so the directory, "My submissions" and the review queue all reload
+ *
+ * useAuth(): "Share a resource" and "My submissions" are for anyone logged in;
+ * the review queue is only for staff and admin. The backend checks roles again.
+ */
 function App() {
-	// A counter that goes up every time an event is created.
-	// EventsPage reloads its list whenever this number changes, so a new event shows up right away without refreshing the browser.
-	//
-	// Ways to show events: "calendar" (default) or "list"
-	// Both read the same GET/events data
-	const [refreshKey, setRefreshKey] = useState(0);
-	const [eventsView, setEventsView] = useState("calendar");
-	/** Goes up after staff post, edit or delete a job, so the Resources page's jobs panel reloads. */
-	const [jobsKey, setJobsKey] = useState(0);
-	/**
-	 * Resources (MASON-7 / MASON-11):
-	 *   sharing       = true while the "Share a resource" pop-up is open
-	 *   resourcesKey  = goes up after a resource is shared, edited, deleted, approved or denied,
-	 *                   so the directory and "My submissions" both reload
-	 */
+	const page = useHashRoute();
+	const { user, isStaff } = useAuth();
 	const [sharing, setSharing] = useState(false);
 	const [resourcesKey, setResourcesKey] = useState(0);
 	const resourcesChanged = () => setResourcesKey((n) => n + 1);
-	const { user, isStaff } = useAuth();
 
 	return (
-		<div>
+		<>
+			<NavBar current={page} />
 			<LoginBar />
-			<ResourcesPage
-				calendarHref="#calendar"
-				jobsReloadKey={jobsKey}
-				reloadKey={resourcesKey}
-				onShare={user ? () => setSharing(true) : undefined}
-			/>
+			<main>
+				{page === "home" && <HomePage />}
+				{page === "events" && <EventsHubPage />}
+				{page === "resources" && (
+					<>
+						<ResourcesPage
+							calendarHref="#calendar"
+							jobsHref="#jobs"
+							reloadKey={resourcesKey}
+							onShare={user ? () => setSharing(true) : undefined}
+						/>
+						{user && <MyResourcesPanel reloadKey={resourcesKey} onChanged={resourcesChanged} />}
+						{isStaff && <ResourceReviewPanel onChanged={resourcesChanged} />}
+					</>
+				)}
+				{page === "jobs" && <JobsPage />}
+			</main>
+
 			{sharing && (
 				<ShareResourceModal
 					onClose={() => setSharing(false)}
@@ -49,31 +72,8 @@ function App() {
 					}}
 				/>
 			)}
-			{user && <MyResourcesPanel reloadKey={resourcesKey} onChanged={resourcesChanged} />}
-			{isStaff && <ResourceReviewPanel onChanged={resourcesChanged} />}
-			<h1>Career Events & Resources</h1>
-			<p>Welcome to our Career Events page!</p>
-			{isStaff && <CreateEventPage onCreated={() => setRefreshKey((n) => n + 1)} />}
-
-			<section id="calendar">
-				<div className="events-view-switch" role="group" aria-label="Show events as">
-					<button type="button" aria-pressed={eventsView === "calendar"} onClick={() => setEventsView("calendar")}>
-						Calendar
-					</button>
-					<button type="button" aria-pressed={eventsView === "list"} onClick={() => setEventsView("list")}>
-						List
-					</button>
-				</div>
-
-				{eventsView === "calendar" ? (
-					<CalendarPage refreshKey={refreshKey} />
-				) : (
-					<EventsPage refreshKey={refreshKey} />
-				)}
-			</section>
-			<JobsPage onChanged={() => setJobsKey((n) => n + 1)} />
-		</div>
-	)
+		</>
+	);
 }
 
-export default App
+export default App;
