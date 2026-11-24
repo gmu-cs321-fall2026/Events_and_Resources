@@ -244,7 +244,30 @@ Events_and_Resources/
 ```
  
 ---
- 
+ ## Run Subsystem 3 in the integration docker-compose
+
+Our image is published to GHCR on every merge to `main`:
+`ghcr.io/gmu-cs321-fall2026/events_and_resources:latest`
+(or pin an exact version with a `sha-xxxxxxx` tag from the Packages page).
+
+    services:
+      events-resources:
+        image: ghcr.io/gmu-cs321-fall2026/events_and_resources:latest
+        ports:
+          - "8080:8080"
+        environment:
+          DB_URL: jdbc:postgresql://events-db:5432/events
+          DB_USER: postgres
+          DB_PASSWORD: dev
+          AUTH_MODE: shared-core
+        depends_on:
+          - events-db
+      events-db:
+        image: postgres:17
+        environment:
+          POSTGRES_PASSWORD: dev
+          POSTGRES_DB: events
+          
 ## Event fields (Interface Contract v9)
  
 | Field | Example | Notes |

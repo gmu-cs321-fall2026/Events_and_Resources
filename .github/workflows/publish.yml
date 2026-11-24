@@ -1,0 +1,72 @@
+# =====================================================================
+# PUBLISH: build our Docker image and push it to GitHub Container Registry
+# (GHCR) so other teams can run Subsystem 3 in the integration
+# docker-compose.
+#
+# ci.yml TESTS the code. This file SHIPS it. It runs only on main, so
+# other teams only ever get code that passed review and CI.
+#
+# Image name:  ghcr.io/gmu-cs321-fall2026/events_and_resources
+# Tags:        latest      -> always the newest main
+#              sha-abc1234 -> one exact commit (pin this for stable testing)
+# =====================================================================
+
+name: Publish image
+
+# WHEN to run.
+on:
+  push:
+    branches: [main]          # every merge to main publishes a new image
+  workflow_dispatch:          # adds a "Run workflow" button in the Actions tab
+
+# GITHUB_TOKEN gets permission to push packages to GHCR.
+# No passwords or secrets to set up.
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Download our repo's code onto the runner.
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      # QEMU + Buildx let one runner build for BOTH chip types:
+      # amd64 (most PCs, GitHub's runners) and arm64 (Apple Silicon Macs).
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Log in to GHCR as the GitHub Actions bot.
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Decide the image name and tags. GHCR names must be lowercase,
+      # so Events_and_Resources becomes events_and_resources.
+      - name: Image name and tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/gmu-cs321-fall2026/events_and_resources
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      # Build the SAME Dockerfile ci.yml tests (final stage) and push it.
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
