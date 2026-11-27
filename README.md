@@ -62,7 +62,7 @@ Then open **http://localhost:8080** (the page and the API are on the same port).
  
 If 8080 is busy, change the left number in `docker-compose.yml`, e.g. `"8083:8080"`, and open `http://localhost:8083`.
  
-Other subsystems are expected on your laptop at **Shared Core 8081** (`SHARED_CORE_URL`) and **Notifications 8082** (`NOTIFICATIONS_URL`).
+Running other subsystems on your laptop without the integration compose? We expect **Shared Core on 8081** (`SHARED_CORE_URL`) and **Notifications on 8082** (`NOTIFICATIONS_URL`).
  
 | Command | What it does |
 |---|---|
@@ -171,6 +171,7 @@ Events_and_Resources/
 ├── Dockerfile                     # 3 stages: build frontend -> build backend -> run app.jar on :8080
 ├── docker-compose.yml             # app + PostgreSQL ("docker compose up --build")
 ├── .github/workflows/ci.yml       # CI: the "lint-and-test" check on every PR
+├── .github/workflows/publish.yml  # Publishes our Docker image to GHCR on every merge to main
 ├── frontend/                      # React app (Vite)
 │   └── src/
 │       ├── App.jsx                # NavBar + LoginBar, then one page at a time from the URL's "#":
@@ -244,29 +245,41 @@ Events_and_Resources/
 ```
  
 ---
- ## Run Subsystem 3 in the integration docker-compose
+## Run Subsystem 3 in the integration docker-compose
 
 Our image is published to GHCR on every merge to `main`:
 `ghcr.io/gmu-cs321-fall2026/events_and_resources:latest`
 (or pin an exact version with a `sha-xxxxxxx` tag from the Packages page).
 
-    services:
+   services:
       events-resources:
         image: ghcr.io/gmu-cs321-fall2026/events_and_resources:latest
         ports:
-          - "8080:8080"
+          - "8080:8080"        # left number = your laptop's port; change it if 8080 is taken
         environment:
           DB_URL: jdbc:postgresql://events-db:5432/events
           DB_USER: postgres
           DB_PASSWORD: dev
           AUTH_MODE: shared-core
+          # Use the service names from the integration compose file.
+          # Inside compose, every service listens on its own 8080.
+          SHARED_CORE_URL: http://shared-core:8080
+          NOTIFICATIONS_URL: http://notifications:8080
         depends_on:
-          - events-db
+          events-db:
+            condition: service_healthy
       events-db:
         image: postgres:17
         environment:
           POSTGRES_PASSWORD: dev
           POSTGRES_DB: events
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U postgres"]
+          interval: 5s
+          timeout: 5s
+          retries: 10
+
+   No team needs to change its port: inside compose, services reach each other by service name on 8080. Only the left side of `ports:` has to be unique on your laptop. `shared-core` and `notifications` are placeholders: replace them with the service names in the integration compose.
           
 ## Event fields (Interface Contract v9)
  
